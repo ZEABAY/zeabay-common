@@ -13,6 +13,13 @@ public final class ZeabayOpsDefaultsEnvironmentPostProcessor
 
   private static final String PROPERTY_SOURCE_NAME = "zeabayOpsDefaults";
 
+  private static void putIfMissing(
+      ConfigurableEnvironment env, Map<String, Object> target, String key, String value) {
+    if (env.getProperty(key) == null) {
+      target.put(key, value);
+    }
+  }
+
   @Override
   public void postProcessEnvironment(
       ConfigurableEnvironment environment, SpringApplication application) {
@@ -34,13 +41,6 @@ public final class ZeabayOpsDefaultsEnvironmentPostProcessor
       environment
           .getPropertySources()
           .addLast(new MapPropertySource(PROPERTY_SOURCE_NAME, defaults));
-    }
-  }
-
-  private static void putIfMissing(
-      ConfigurableEnvironment env, Map<String, Object> target, String key, String value) {
-    if (env.getProperty(key) == null) {
-      target.put(key, value);
     }
   }
 
