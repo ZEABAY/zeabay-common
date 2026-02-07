@@ -1,8 +1,8 @@
 package com.zeabay.common.web;
 
-import com.zeabay.common.api.model.ApiResponse;
 import com.zeabay.common.api.exception.BusinessException;
 import com.zeabay.common.api.exception.ErrorCode;
+import com.zeabay.common.api.model.ApiResponse;
 import com.zeabay.common.api.model.ErrorResponse;
 import com.zeabay.common.api.model.ValidationError;
 import com.zeabay.common.autoconfigure.ZeabayCommonAutoConfiguration;
@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.util.List;
 
 @Order(-2)
+@RestControllerAdvice
 public class ZeabayGlobalExceptionHandler {
 
     @ExceptionHandler(WebExchangeBindException.class)
