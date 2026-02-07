@@ -46,6 +46,7 @@ public class ZeabayCommonAutoConfiguration {
     // ---------- TSID ----------
 
     @Bean
+    @ConditionalOnMissingBean
     public TsidIdGenerator tsidIdGenerator() {
         return new TsidIdGenerator();
     }
@@ -59,10 +60,9 @@ public class ZeabayCommonAutoConfiguration {
         return (ServerWebExchange exchange, WebFilterChain chain) -> {
             String traceId = resolveTraceId(exchange);
 
-            // response header'a yaz
             exchange.getResponse().getHeaders().set(TRACE_ID_HEADER, traceId);
+            exchange.getAttributes().put(TRACE_ID_CTX_KEY, traceId);
 
-            // reactive chain boyunca taşınacak source-of-truth
             return chain.filter(exchange)
                     .contextWrite(ctx -> ctx.put(TRACE_ID_CTX_KEY, traceId));
         };
@@ -79,10 +79,6 @@ public class ZeabayCommonAutoConfiguration {
 
     // ---------- OUTBOUND (WebClient) ----------
 
-    /**
-     * Reactor Context'teki traceId'yi outbound HTTP header'a taşır.
-     * Servis manuel header set etmişse override etmez.
-     */
     @Bean
     @ConditionalOnClass(ExchangeFilterFunction.class)
     @ConditionalOnMissingBean(name = "zeabayTraceIdWebClientFilter")
@@ -101,21 +97,12 @@ public class ZeabayCommonAutoConfiguration {
         });
     }
 
-
-
-    /**
-     * Default WebClient (boilerplate yok):
-     * - trace filter dahil
-     * - servis kendi WebClient bean'ini yazarsa bu oluşmaz (override)
-     */
     @Bean
     @ConditionalOnClass(WebClient.class)
     @ConditionalOnMissingBean(WebClient.class)
     public WebClient webClient(ObjectProvider<WebClient.Builder> builderProvider,
                                ExchangeFilterFunction zeabayTraceIdWebClientFilter) {
-
         WebClient.Builder builder = builderProvider.getIfAvailable(WebClient::builder);
-        // not: builderProvider yoksa fallback WebClient::builder ile oluşur
 
         return builder
                 .filter(zeabayTraceIdWebClientFilter)

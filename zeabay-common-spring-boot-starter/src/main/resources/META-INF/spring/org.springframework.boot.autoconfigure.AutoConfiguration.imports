@@ -1,1 +1,2 @@
 com.zeabay.common.autoconfigure.ZeabayCommonAutoConfiguration
+com.zeabay.common.autoconfigure.ZeabayErrorHandlingAutoConfiguration
