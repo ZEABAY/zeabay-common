@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <developers>
+        <developer>
+            <id>zeabay</id>
+            <name>Zeynel Abiddin Aydar</name>
+            <email>zeynelaydar@gmail.com</email>
+            <url>https://zeynelaydar.com</url>
+            <organization>Zeabay</organization>
+            <organizationUrl>https://github.com/zeabay</organizationUrl>
+            <roles>
+                <role>Lead Developer</role>
+                <role>Architect</role>
+            </roles>
+            <timezone>Europe/Istanbul</timezone>
+        </developer>
+    </developers>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.zeabay</groupId>
+    <artifactId>zeabay-common</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>zeabay-common</name>
+
+    <properties>
+        <java.version>25</java.version>
+        <maven.compiler.release>25</maven.compiler.release>
+    </properties>
+
+    <modules>
+        <module>zeabay-common-spring-boot-starter</module>
+    </modules>
+
+</project>
