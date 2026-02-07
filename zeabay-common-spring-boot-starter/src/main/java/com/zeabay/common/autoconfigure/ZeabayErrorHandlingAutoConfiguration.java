@@ -7,8 +7,8 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration
 public class ZeabayErrorHandlingAutoConfiguration {
 
-    @Bean
-    ZeabayGlobalExceptionHandler zeabayGlobalExceptionHandler() {
-        return new ZeabayGlobalExceptionHandler();
-    }
+  @Bean
+  ZeabayGlobalExceptionHandler zeabayGlobalExceptionHandler() {
+    return new ZeabayGlobalExceptionHandler();
+  }
 }

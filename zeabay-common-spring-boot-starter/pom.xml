@@ -1,27 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.2</version>
-        <relativePath/>
+        <groupId>com.zeabay</groupId>
+        <artifactId>zeabay-common</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>com.zeabay</groupId>
     <artifactId>zeabay-common-spring-boot-starter</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>zeabay-common-spring-boot-starter</name>
     <packaging>jar</packaging>
-
-    <properties>
-        <java.version>25</java.version>
-        <springdoc.version>3.0.1</springdoc.version>
-        <tsid.version>5.2.6</tsid.version>
-    </properties>
 
     <dependencies>
         <!-- Reactive stack -->
@@ -54,7 +47,6 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
-
     </dependencies>
 
 </project>

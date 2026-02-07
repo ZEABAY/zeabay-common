@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
@@ -37,10 +37,60 @@
     <properties>
         <java.version>25</java.version>
         <maven.compiler.release>25</maven.compiler.release>
+
+        <!-- library versions -->
+        <springdoc.version>3.0.1</springdoc.version>
+        <tsid.version>5.2.6</tsid.version>
+
+        <!-- quality gate: Spotless -->
+        <spotless.version>3.2.1</spotless.version>
+        <googlejavaformat.version>1.34.1</googlejavaformat.version>
+        <spotless.skip>false</spotless.skip>
     </properties>
 
     <modules>
         <module>zeabay-common-spring-boot-starter</module>
     </modules>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless.version}</version>
+                    <configuration>
+                        <skip>${spotless.skip}</skip>
+                        <java>
+                            <googleJavaFormat>
+                                <version>${googlejavaformat.version}</version>
+                            </googleJavaFormat>
+                            <removeUnusedImports/>
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
+                        </java>
+                    </configuration>
+                    <executions>
+                        <!-- build kırıcı gate -->
+                        <execution>
+                            <id>spotless-check</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <!-- pluginManagement tek başına çalıştırmaz; burada aktive ediyoruz -->
+        <plugins>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
