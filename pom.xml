@@ -64,7 +64,9 @@
                         <java>
                             <googleJavaFormat>
                                 <version>${googlejavaformat.version}</version>
+                                <style>GOOGLE</style>
                             </googleJavaFormat>
+                            <importOrder/>
                             <removeUnusedImports/>
                             <trimTrailingWhitespace/>
                             <endWithNewline/>

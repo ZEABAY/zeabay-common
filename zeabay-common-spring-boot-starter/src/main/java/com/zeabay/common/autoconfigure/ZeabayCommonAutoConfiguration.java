@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.reactivestreams.Subscription;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -155,12 +156,7 @@ public class ZeabayCommonAutoConfiguration {
         .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
   }
 
-  private static final class MdcLifter<T> implements CoreSubscriber<T> {
-    private final CoreSubscriber<? super T> delegate;
-
-    private MdcLifter(CoreSubscriber<? super T> delegate) {
-      this.delegate = delegate;
-    }
+  private record MdcLifter<T>(CoreSubscriber<? super T> delegate) implements CoreSubscriber<T> {
 
     private static void withMdc(Context ctx, Runnable r) {
       Object traceIdObj = ctx.getOrDefault(TRACE_ID_CTX_KEY, null);
@@ -190,7 +186,7 @@ public class ZeabayCommonAutoConfiguration {
     }
 
     @Override
-    public void onSubscribe(org.reactivestreams.Subscription s) {
+    public void onSubscribe(Subscription s) {
       delegate.onSubscribe(s);
     }
 
