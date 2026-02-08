@@ -23,6 +23,7 @@ public final class ZeabayOpsDefaultsEnvironmentPostProcessor
   @Override
   public void postProcessEnvironment(
       ConfigurableEnvironment environment, SpringApplication application) {
+
     Map<String, Object> defaults = new LinkedHashMap<>();
 
     putIfMissing(environment, defaults, "management.endpoint.health.probes.enabled", "true");
@@ -31,11 +32,20 @@ public final class ZeabayOpsDefaultsEnvironmentPostProcessor
     putIfMissing(environment, defaults, "management.endpoint.livenessstate.enabled", "true");
     putIfMissing(environment, defaults, "management.endpoint.readinessstate.enabled", "true");
 
-    putIfMissing(
-        environment,
-        defaults,
-        "management.endpoints.web.exposure.include",
-        "health,info,metrics,prometheus");
+    putIfMissing(environment, defaults, "management.info.build.enabled", "true");
+    putIfMissing(environment, defaults, "management.endpoint.prometheus.enabled", "true");
+
+    boolean isProd = environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"));
+
+    if (isProd) {
+      putIfMissing(environment, defaults, "management.endpoints.web.exposure.include", "health");
+    } else {
+      putIfMissing(
+          environment,
+          defaults,
+          "management.endpoints.web.exposure.include",
+          "health,info,metrics,prometheus");
+    }
 
     if (!defaults.isEmpty() && environment.getPropertySources().get(PROPERTY_SOURCE_NAME) == null) {
       environment
