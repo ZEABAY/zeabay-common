@@ -3,10 +3,7 @@ package com.zeabay.common.web;
 import com.zeabay.common.api.exception.BusinessException;
 import com.zeabay.common.api.exception.ErrorCode;
 import com.zeabay.common.api.model.ApiResponse;
-import com.zeabay.common.api.model.ErrorResponse;
 import com.zeabay.common.api.model.ValidationError;
-import com.zeabay.common.autoconfigure.ZeabayCommonAutoConfiguration;
-import java.time.Instant;
 import java.util.List;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -26,38 +23,24 @@ public class ZeabayGlobalExceptionHandler {
   @ExceptionHandler(WebExchangeBindException.class)
   public Mono<ResponseEntity<ApiResponse<Void>>> handleValidation(
       WebExchangeBindException ex, ServerWebExchange exchange) {
-    String traceId = traceId(exchange);
-    String path = exchange.getRequest().getPath().value();
 
     List<ValidationError> errors =
         ex.getFieldErrors().stream().map(this::toValidationError).toList();
-
-    ErrorResponse err =
-        new ErrorResponse(
-            ErrorCode.VALIDATION_ERROR.code(), "Validation failed", path, Instant.now(), errors);
-
-    return Mono.just(ResponseEntity.badRequest().body(ApiResponse.fail(err, traceId)));
+    return ZeabayResponses.error(
+        exchange, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR, "Validation failed", errors);
   }
 
   @ExceptionHandler(BusinessException.class)
   public Mono<ResponseEntity<ApiResponse<Void>>> handleBusiness(
       BusinessException ex, ServerWebExchange exchange) {
-    String traceId = traceId(exchange);
-    String path = exchange.getRequest().getPath().value();
 
-    ErrorResponse err =
-        new ErrorResponse(
-            ex.getErrorCode().code(), ex.getMessage(), path, Instant.now(), List.of());
-
-    return Mono.just(
-        ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(err, traceId)));
+    return ZeabayResponses.error(
+        exchange, HttpStatus.BAD_REQUEST, ex.getErrorCode(), ex.getMessage());
   }
 
   @ExceptionHandler(ResponseStatusException.class)
   public Mono<ResponseEntity<ApiResponse<Void>>> handleResponseStatus(
       ResponseStatusException ex, ServerWebExchange exchange) {
-    String traceId = traceId(exchange);
-    String path = exchange.getRequest().getPath().value();
 
     HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
     if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -71,46 +54,19 @@ public class ZeabayGlobalExceptionHandler {
           default -> ErrorCode.INTERNAL_ERROR;
         };
 
-    ErrorResponse err =
-        new ErrorResponse(
-            code.code(),
-            ex.getReason() != null ? ex.getReason() : status.getReasonPhrase(),
-            path,
-            Instant.now(),
-            List.of());
-
-    return Mono.just(ResponseEntity.status(status).body(ApiResponse.fail(err, traceId)));
+    String message = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+    return ZeabayResponses.error(exchange, status, code, message);
   }
 
   @ExceptionHandler(Throwable.class)
   public Mono<ResponseEntity<ApiResponse<Void>>> handleAny(
       Throwable ex, ServerWebExchange exchange) {
-    String traceId = traceId(exchange);
-    String path = exchange.getRequest().getPath().value();
-
-    ErrorResponse err =
-        new ErrorResponse(
-            ErrorCode.INTERNAL_ERROR.code(), "Unexpected error", path, Instant.now(), List.of());
-
-    return Mono.just(
-        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(ApiResponse.fail(err, traceId)));
+    return ZeabayResponses.error(
+        exchange, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR, "Unexpected error");
   }
-
-  // --- helpers
 
   private ValidationError toValidationError(FieldError fe) {
     return new ValidationError(
         fe.getField(), fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "invalid");
-  }
-
-  private String traceId(ServerWebExchange exchange) {
-    Object v = exchange.getAttribute(ZeabayCommonAutoConfiguration.TRACE_ID_CTX_KEY);
-    if (v != null) return v.toString();
-
-    // fallback
-    String header =
-        exchange.getRequest().getHeaders().getFirst(ZeabayCommonAutoConfiguration.TRACE_ID_HEADER);
-    return header != null ? header : "missing";
   }
 }

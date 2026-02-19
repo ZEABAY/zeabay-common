@@ -20,12 +20,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
@@ -94,9 +95,32 @@ public class ZeabayCommonAutoConfiguration {
   @Order(Ordered.HIGHEST_PRECEDENCE)
   @ConditionalOnWebApplication(type = REACTIVE)
   public WebFilter traceIdWebFilter() {
-    return (ServerWebExchange exchange, WebFilterChain chain) -> {
-      String traceId = resolveTraceId(exchange);
+    return (exchange, chain) -> {
 
+      // --- DEV CORS (temporary) ---
+      // TODO CORS düzeltilecek
+      String origin = exchange.getRequest().getHeaders().getOrigin();
+      if (origin != null && !origin.isBlank()) {
+        var h = exchange.getResponse().getHeaders();
+
+        // "her şeye izin ver" dev modu: origin echo
+        h.set("Access-Control-Allow-Origin", origin);
+        h.add("Vary", "Origin");
+
+        h.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+        h.set("Access-Control-Allow-Headers", "*");
+        h.set("Access-Control-Expose-Headers", TRACE_ID_HEADER + ",traceparent");
+        h.set("Access-Control-Max-Age", "3600");
+      }
+
+      // --- Preflight short-circuit (OPTIONS) ---
+      if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
+        exchange.getResponse().setStatusCode(HttpStatus.OK);
+        return exchange.getResponse().setComplete();
+      }
+
+      // --- TraceId ---
+      String traceId = resolveTraceId(exchange);
       exchange.getResponse().getHeaders().set(TRACE_ID_HEADER, traceId);
       exchange.getAttributes().put(TRACE_ID_CTX_KEY, traceId);
 
