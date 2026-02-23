@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <developers>
+        <developer>
+            <id>zeabay</id>
+            <name>Zeynel Abiddin Aydar</name>
+            <email>zeynelaydar@gmail.com</email>
+            <url>https://zeynelaydar.com</url>
+            <organization>Zeabay</organization>
+            <organizationUrl>https://github.com/zeabay</organizationUrl>
+            <roles>
+                <role>Lead Developer</role>
+                <role>Architect</role>
+            </roles>
+            <timezone>Europe/Istanbul</timezone>
+        </developer>
+    </developers>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.zeabay</groupId>
+    <artifactId>zeabay-common</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>zeabay-common</name>
+
+    <properties>
+        <java.version>25</java.version>
+        <maven.compiler.release>25</maven.compiler.release>
+
+        <!-- library versions -->
+        <springdoc.version>3.0.1</springdoc.version>
+        <tsid.version>5.2.6</tsid.version>
+
+        <!-- quality gate: Spotless -->
+        <spotless.version>3.2.1</spotless.version>
+        <googlejavaformat.version>1.34.1</googlejavaformat.version>
+        <spotless.skip>false</spotless.skip>
+    </properties>
+
+    <modules>
+        <module>zeabay-core</module>
+        <module>zeabay-webflux</module>
+        <module>zeabay-openapi</module>
+        <module>zeabay-ops</module>
+        <module>zeabay-logging</module>
+    </modules>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless.version}</version>
+                    <configuration>
+                        <skip>${spotless.skip}</skip>
+                        <java>
+                            <googleJavaFormat>
+                                <version>${googlejavaformat.version}</version>
+                                <style>GOOGLE</style>
+                            </googleJavaFormat>
+                            <importOrder/>
+                            <removeUnusedImports/>
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
+                        </java>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>spotless-check</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.42</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

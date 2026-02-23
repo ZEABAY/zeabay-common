@@ -1,0 +1,35 @@
+package com.zeabay.common.autoconfigure;
+
+import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE;
+
+import com.zeabay.common.constant.ZeabayConstants;
+import java.util.List;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+
+@AutoConfiguration
+@ConditionalOnWebApplication(type = REACTIVE)
+public class ZeabayCorsAutoConfiguration {
+
+  @Bean
+  public CorsWebFilter corsWebFilter() {
+    CorsConfiguration config = new CorsConfiguration();
+
+    // Default secure but permissive standard for dev/Sprint 0
+    config.setAllowedOriginPatterns(List.of("*"));
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(List.of("*"));
+    config.setExposedHeaders(List.of(ZeabayConstants.TRACE_ID_HEADER, "traceparent"));
+    config.setAllowCredentials(false);
+    config.setMaxAge(3600L);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+
+    return new CorsWebFilter(source);
+  }
+}
