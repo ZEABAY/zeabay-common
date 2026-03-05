@@ -7,6 +7,7 @@ import com.zeabay.common.keycloak.dto.KeycloakTokenResponse;
 import com.zeabay.common.logging.Loggable;
 import jakarta.ws.rs.core.Response;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -120,6 +121,31 @@ public class ZeabayKeycloakClient {
             () -> {
               keycloakAdminClient.realm(properties.realm()).users().get(keycloakId).logout();
               log.info("Logged out Keycloak user {}", keycloakId);
+              return (Void) null;
+            })
+        .subscribeOn(Schedulers.boundedElastic());
+  }
+
+  /**
+   * Assigns a realm-level role to the given Keycloak user.
+   *
+   * @param keycloakId Keycloak user UUID
+   * @param roleName   Realm role name (e.g. {@code "user"}, {@code "admin"})
+   */
+  public Mono<Void> assignRealmRole(String keycloakId, String roleName) {
+    return Mono.fromCallable(
+            () -> {
+              var roleRep =
+                  keycloakAdminClient.realm(properties.realm()).roles().get(roleName)
+                      .toRepresentation();
+              keycloakAdminClient
+                  .realm(properties.realm())
+                  .users()
+                  .get(keycloakId)
+                  .roles()
+                  .realmLevel()
+                  .add(List.of(roleRep));
+              log.info("Assigned realm role '{}' to Keycloak user {}", roleName, keycloakId);
               return (Void) null;
             })
         .subscribeOn(Schedulers.boundedElastic());
