@@ -46,15 +46,90 @@
         <spotless.version>3.2.1</spotless.version>
         <googlejavaformat.version>1.34.1</googlejavaformat.version>
         <spotless.skip>false</spotless.skip>
+
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
     </properties>
 
     <modules>
+        <module>zeabay-bom</module>
         <module>zeabay-core</module>
         <module>zeabay-webflux</module>
         <module>zeabay-openapi</module>
         <module>zeabay-ops</module>
         <module>zeabay-logging</module>
+        <module>zeabay-r2dbc</module>
+        <module>zeabay-validation</module>
+        <module>zeabay-security</module>
+        <module>zeabay-kafka</module>
+        <module>zeabay-outbox</module>
+        <module>zeabay-keycloak</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-webflux</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-openapi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-ops</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-logging</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-r2dbc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-validation</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-security</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-kafka</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-outbox</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-keycloak</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <pluginManagement>
@@ -99,6 +174,11 @@
                         <arg>-parameters</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>

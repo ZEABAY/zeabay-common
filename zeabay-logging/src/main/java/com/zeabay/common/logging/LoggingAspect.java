@@ -20,6 +20,7 @@ import reactor.util.context.ContextView;
 public class LoggingAspect {
 
   public static final String TRACE_ID_CTX_KEY = "traceId";
+  private static final String HIDDEN_VALUE = "[HIDDEN]";
 
   @Around("@annotation(loggable) || @within(loggable)")
   public Object logAround(ProceedingJoinPoint joinPoint, Loggable loggable) throws Throwable {
@@ -37,7 +38,7 @@ public class LoggingAspect {
     boolean logArgs = loggable != null && loggable.logArgs();
     boolean logResult = loggable != null && loggable.logResult();
 
-    String argsString = logArgs ? Arrays.toString(joinPoint.getArgs()) : "[HIDDEN]";
+    String argsString = logArgs ? Arrays.toString(joinPoint.getArgs()) : HIDDEN_VALUE;
     log.info("{} ==> [{}] called with args: {}", getLogPrefixFromMdc(), methodId, argsString);
 
     long startTime = System.currentTimeMillis();
@@ -57,31 +58,31 @@ public class LoggingAspect {
       throw ex;
     }
 
-    if (result instanceof Mono<?> mono) {
-      @SuppressWarnings("ReactiveStreamsUnusedPublisher")
-      Object interceptedMono =
+    return switch (result) {
+      case Mono<?> mono ->
           mono.transformDeferredContextual(
               (originalMono, ctx) ->
                   logMonoResult(originalMono, methodId, startTime, logResult, ctx));
-      return interceptedMono;
-    } else if (result instanceof Flux<?> flux) {
-      @SuppressWarnings("ReactiveStreamsUnusedPublisher")
-      Object interceptedFlux =
+
+      case Flux<?> flux ->
           flux.transformDeferredContextual(
               (originalFlux, ctx) ->
                   logFluxResult(originalFlux, methodId, startTime, logResult, ctx));
-      return interceptedFlux;
-    } else {
-      long duration = System.currentTimeMillis() - startTime;
-      String resultString = logResult ? String.valueOf(result) : "[HIDDEN]";
-      log.info(
-          "{} <== [{}] returned in {}ms with result: {}",
-          getLogPrefixFromMdc(),
-          methodId,
-          duration,
-          resultString);
-      return result;
-    }
+
+      default -> {
+        long duration = System.currentTimeMillis() - startTime;
+        String resultString = logResult ? String.valueOf(result) : HIDDEN_VALUE;
+
+        log.info(
+            "{} <== [{}] returned in {}ms with result: {}",
+            getLogPrefixFromMdc(),
+            methodId,
+            duration,
+            resultString);
+
+        yield result;
+      }
+    };
   }
 
   private String getLogPrefixFromMdc() {
@@ -119,7 +120,7 @@ public class LoggingAspect {
     return mono.doOnSuccess(
             value -> {
               long duration = System.currentTimeMillis() - startTime;
-              String resultString = logResult ? String.valueOf(value) : "[HIDDEN]";
+              String resultString = logResult ? String.valueOf(value) : HIDDEN_VALUE;
               log.info(
                   "{} <== [{}] completed in {}ms with result: {}",
                   logPrefix,

@@ -2,9 +2,10 @@ package com.zeabay.common.web;
 
 import com.zeabay.common.api.exception.BusinessException;
 import com.zeabay.common.api.exception.ErrorCode;
-import com.zeabay.common.api.model.ApiResponse;
 import com.zeabay.common.api.model.ValidationError;
+import com.zeabay.common.api.model.ZeabayApiResponse;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,12 +17,13 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Order(-2)
 @RestControllerAdvice
 public class ZeabayGlobalExceptionHandler {
 
   @ExceptionHandler(WebExchangeBindException.class)
-  public Mono<ResponseEntity<ApiResponse<Void>>> handleValidation(
+  public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleValidation(
       WebExchangeBindException ex, ServerWebExchange exchange) {
 
     List<ValidationError> errors =
@@ -31,7 +33,7 @@ public class ZeabayGlobalExceptionHandler {
   }
 
   @ExceptionHandler(BusinessException.class)
-  public Mono<ResponseEntity<ApiResponse<Void>>> handleBusiness(
+  public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleBusiness(
       BusinessException ex, ServerWebExchange exchange) {
 
     return ZeabayResponses.error(
@@ -39,7 +41,7 @@ public class ZeabayGlobalExceptionHandler {
   }
 
   @ExceptionHandler(ResponseStatusException.class)
-  public Mono<ResponseEntity<ApiResponse<Void>>> handleResponseStatus(
+  public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleResponseStatus(
       ResponseStatusException ex, ServerWebExchange exchange) {
 
     HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
@@ -59,8 +61,9 @@ public class ZeabayGlobalExceptionHandler {
   }
 
   @ExceptionHandler(Throwable.class)
-  public Mono<ResponseEntity<ApiResponse<Void>>> handleAny(
+  public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleAny(
       Throwable ex, ServerWebExchange exchange) {
+    log.error("Unhandled exception processing request: {}", exchange.getRequest().getURI(), ex);
     return ZeabayResponses.error(
         exchange, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR, "Unexpected error");
   }

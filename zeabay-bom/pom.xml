@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.zeabay</groupId>
+    <artifactId>zeabay-bom</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>zeabay-bom</name>
+    <description>
+        Bill of Materials for zeabay-common modules.
+        Import this BOM in any project to manage all zeabay module versions centrally.
+
+        Usage in dependencyManagement:
+        groupId: com.zeabay
+        artifactId: zeabay-bom
+        version: 1.0.0-SNAPSHOT
+        type: pom
+        scope: import
+    </description>
+
+    <properties>
+        <zeabay.version>1.0.0-SNAPSHOT</zeabay.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-core</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-webflux</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-openapi</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-ops</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-logging</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-r2dbc</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-validation</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-security</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-kafka</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-outbox</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-keycloak</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <!-- zeabay-bom is a pure BOM (no Java sources) — skip spotless -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>3.2.1</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

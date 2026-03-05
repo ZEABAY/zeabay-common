@@ -1,9 +1,9 @@
 package com.zeabay.common.web;
 
 import com.zeabay.common.api.exception.ErrorCode;
-import com.zeabay.common.api.model.ApiResponse;
 import com.zeabay.common.api.model.ErrorResponse;
 import com.zeabay.common.api.model.ValidationError;
+import com.zeabay.common.api.model.ZeabayApiResponse;
 import com.zeabay.common.constant.ZeabayConstants;
 import java.time.Instant;
 import java.util.List;
@@ -19,12 +19,13 @@ import reactor.util.context.ContextView;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ZeabayResponses {
+  private static final String MISSING_VALUE = "missing";
 
   // -------- TraceId helpers --------
 
   public static String traceId(ContextView ctx) {
-    Object v = ctx.getOrDefault(ZeabayConstants.TRACE_ID_CTX_KEY, "missing");
-    return v != null ? v.toString() : "missing";
+    Object v = ctx.getOrDefault(ZeabayConstants.TRACE_ID_CTX_KEY, MISSING_VALUE);
+    return v != null ? v.toString() : MISSING_VALUE;
   }
 
   public static String traceId(ServerWebExchange exchange) {
@@ -34,18 +35,26 @@ public final class ZeabayResponses {
     // fallback
     return Optional.ofNullable(
             exchange.getRequest().getHeaders().getFirst(ZeabayConstants.TRACE_ID_HEADER))
-        .orElse("missing");
+        .orElse(MISSING_VALUE);
   }
 
   // -------- Success (service/controller) --------
 
-  public static <T> Mono<ApiResponse<T>> ok(T data) {
-    return Mono.deferContextual(ctx -> Mono.just(ApiResponse.ok(data, traceId(ctx))));
+  public static <T> Mono<ZeabayApiResponse<T>> ok(T data) {
+    return Mono.deferContextual(ctx -> Mono.just(ZeabayApiResponse.ok(data, traceId(ctx))));
+  }
+
+  public static <T> Mono<ResponseEntity<ZeabayApiResponse<T>>> created(
+      T data, java.net.URI location) {
+    return Mono.deferContextual(
+        ctx ->
+            Mono.just(
+                ResponseEntity.created(location).body(ZeabayApiResponse.ok(data, traceId(ctx)))));
   }
 
   // -------- Fail (typed, so it fits any endpoint return type) --------
 
-  public static <T> Mono<ApiResponse<T>> fail(
+  public static <T> Mono<ZeabayApiResponse<T>> fail(
       ServerHttpRequest request,
       ErrorCode code,
       String message,
@@ -58,13 +67,13 @@ public final class ZeabayResponses {
           ErrorResponse err =
               new ErrorResponse(
                   code.getCode(), message, request.getPath().value(), now, validationErrors);
-          return Mono.just(new ApiResponse<>(false, null, err, tid, now));
+          return Mono.just(new ZeabayApiResponse<>(false, null, err, tid, now));
         });
   }
 
   // -------- Fail for ExceptionHandler (ResponseEntity) --------
 
-  public static Mono<ResponseEntity<ApiResponse<Void>>> error(
+  public static Mono<ResponseEntity<ZeabayApiResponse<Void>>> error(
       ServerWebExchange exchange,
       HttpStatus status,
       ErrorCode code,
@@ -76,10 +85,10 @@ public final class ZeabayResponses {
     Instant now = Instant.now();
 
     ErrorResponse err = new ErrorResponse(code.getCode(), message, path, now, validationErrors);
-    return Mono.just(ResponseEntity.status(status).body(ApiResponse.fail(err, tid)));
+    return Mono.just(ResponseEntity.status(status).body(ZeabayApiResponse.fail(err, tid)));
   }
 
-  public static Mono<ResponseEntity<ApiResponse<Void>>> error(
+  public static Mono<ResponseEntity<ZeabayApiResponse<Void>>> error(
       ServerWebExchange exchange, HttpStatus status, ErrorCode code, String message) {
     return error(exchange, status, code, message, List.of());
   }
