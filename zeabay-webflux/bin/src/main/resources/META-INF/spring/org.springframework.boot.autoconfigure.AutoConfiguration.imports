@@ -1,0 +1,4 @@
+com.zeabay.common.autoconfigure.ZeabayCorsAutoConfiguration
+com.zeabay.common.autoconfigure.ZeabayErrorHandlingAutoConfiguration
+com.zeabay.common.autoconfigure.ZeabayTraceIdAutoConfiguration
+com.zeabay.common.autoconfigure.ZeabayWebClientAutoConfiguration

@@ -78,10 +78,10 @@ A robust, reactive common library designed for microservices architecture, provi
 - **Effect**: Moves complex authentication/registration logic into a reusable client.
 
 #### [`zeabay-r2dbc`](./zeabay-r2dbc/README.md)
-- **Purpose**: Reactive database metadata management.
+- **Purpose**: Reactive database metadata management and automatic TSID primary key generation.
 - **Technology**: Spring Data R2DBC.
-- **Usage**: Extend `BaseEntity` in your domain models.
-- **Effect**: Automatically populates `created_at`, `updated_at`, and audit fields in a reactive manner.
+- **Usage**: Extend `BaseEntity` for full audit trail, or declare a plain entity with an `@Id Long` field for lightweight tables.
+- **Effect**: Automatically populates `created_at`, `updated_at`, audit fields, and TSID primary keys for all entities — with or without `BaseEntity` inheritance.
 
 ---
 

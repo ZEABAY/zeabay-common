@@ -6,36 +6,66 @@ The `zeabay-r2dbc` module provides reactive database support, standardizing enti
 - **Spring Data R2DBC**: Reactive relational database access.
 - **R2DBC**: Reactive database drivers.
 - **Project Reactor**: Asynchronous data streams.
+- **TSID**: Time-Sorted Unique Identifiers for primary keys.
 
 ## 📦 Core Components
 
 ### 1. `BaseEntity`
-A baseline class for all domain entities. It provides standard fields:
-- `id`: The primary key (usually TSID).
-- `createdAt`: Set automatically when the record is created.
-- `updatedAt`: Updated automatically on every save.
-- `version`: Optimistic locking field to prevent concurrent update conflicts.
+A baseline abstract class for domain entities that require a full audit trail. It provides:
+- `id` (`Long`): TSID primary key, auto-assigned on INSERT via `zeabayTsidBeforeConvertCallback`.
+- `createdAt` / `updatedAt`: Populated automatically by Spring Data R2DBC auditing.
+- `createdBy` / `updatedBy`: Set from the reactive security context (or `"system"` as fallback).
+- `deletedAt` / `deletedBy`: Soft-delete support via `isDeleted()` helper.
 
 ### 2. `ZeabayR2dbcAuditingAutoConfiguration`
-Automatically enables R2DBC auditing and registers an `AuditorAware` bean to track *who* created or modified a record.
+Activates R2DBC auditing and registers three beans:
+
+| Bean | Type | Purpose |
+|---|---|---|
+| `zeabayReactiveAuditorAware` | `ReactiveAuditorAware<String>` | Returns `"system"` when no security context is present (overridden by `zeabay-security`). |
+| `zeabayTsidBeforeConvertCallback` | `BeforeConvertCallback<BaseEntity>` | Assigns a TSID Long to `BaseEntity.id` before INSERT if null. Only fires for `BaseEntity` subclasses. |
+| `zeabayGenericTsidBeforeConvertCallback` | `BeforeConvertCallback<Object>` | Fires for every entity type. Immediately returns no-op for `BaseEntity` instances (`instanceof` guard); otherwise assigns a TSID Long to any `@Id Long` field via reflection before INSERT if null. |
+
+The generic callback enables entities like `AuthVerificationToken` (which don't need audit columns) to still receive automatic TSID primary keys without inheriting from `BaseEntity`.
 
 ## 🚀 How to Use
 
-### 1. Define your Entity
-Extend `BaseEntity` to inherit standard auditing and ID fields:
+### Option A — Entity with full audit trail
+Extend `BaseEntity` to inherit the TSID PK and all audit/soft-delete fields:
 
 ```java
 @Table("customers")
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
 public class Customer extends BaseEntity {
     private String name;
     private String email;
 }
 ```
 
-### 2. Repository Usage
-Use standard Spring Data R2DBC repositories. The auditing fields will be handled by the library.
+### Option B — Lightweight entity (no audit columns)
+Declare a plain class with an `@Id Long` field. The generic TSID callback will assign the ID automatically:
+
+```java
+@Table("verification_tokens")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class VerificationToken {
+
+    /** TSID assigned by zeabayGenericTsidBeforeConvertCallback before INSERT. */
+    @Id
+    private Long id;
+
+    private String token;
+    private Instant expiresAt;
+}
+```
+
+### Repository
+Standard Spring Data R2DBC repositories work with both options:
 
 ```java
 public interface CustomerRepository extends ReactiveCrudRepository<Customer, Long> {
@@ -43,6 +73,6 @@ public interface CustomerRepository extends ReactiveCrudRepository<Customer, Lon
 ```
 
 ## ⚠️ System Impact
-- **Consistency**: All tables across all microservices will have the same metadata structure.
-- **Data Integrity**: Built-in optimistic locking (`@Version`) prevents "lost update" scenarios.
+- **Consistency**: All `BaseEntity` tables have the same audit metadata structure.
+- **Flexibility**: Lightweight entities still get TSID primary keys without inheriting audit columns.
 - **Observability**: Simplifies tracking when and by whom data was changed.

@@ -5,6 +5,7 @@ import com.zeabay.common.api.model.ErrorResponse;
 import com.zeabay.common.api.model.ValidationError;
 import com.zeabay.common.api.model.ZeabayApiResponse;
 import com.zeabay.common.constant.ZeabayConstants;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -44,8 +45,7 @@ public final class ZeabayResponses {
     return Mono.deferContextual(ctx -> Mono.just(ZeabayApiResponse.ok(data, traceId(ctx))));
   }
 
-  public static <T> Mono<ResponseEntity<ZeabayApiResponse<T>>> created(
-      T data, java.net.URI location) {
+  public static <T> Mono<ResponseEntity<ZeabayApiResponse<T>>> created(T data, URI location) {
     return Mono.deferContextual(
         ctx ->
             Mono.just(

@@ -1,51 +1,77 @@
 # Zeabay Kafka
 
-The `zeabay-kafka` module provides a standardized, reactive-friendly foundation for event-driven messaging across Zeabay microservices. It simplifies producer/consumer configuration and enforces best practices like DLQs and idempotence.
+The `zeabay-kafka` module provides a standardized, reactive-friendly foundation for event-driven messaging across Zeabay microservices. It enforces a consistent event schema and simplifies producer/consumer configuration.
 
 ## 🛠️ Technology Stack
 - **Spring Kafka**: Spring context for Apache Kafka.
-- **Apache Kafka**: Distributed event streaming platform.
+- **Apache Kafka** (KRaft mode): Distributed event streaming platform.
 - **Project Reactor**: For reactive event processing.
 
 ## 📦 Core Components
 
 ### 1. `BaseEvent`
-A baseline class for all Kafka event payloads. It includes metadata like `aggregateId`, `eventType`, `traceId`, and `timestamp`.
+Abstract baseline class for all Kafka event payloads. Every concrete event carries:
 
-### 2. `ZeabayKafkaProperties`
-Typed configuration for Kafka settings, including producer/consumer tuning and DLQ (Dead Letter Queue) parameters.
+| Field | Type | Description |
+|---|---|---|
+| `eventId` | `String` | TSID string — unique event identifier for deduplication. |
+| `traceId` | `String` | Distributed trace ID propagated from the originating request. |
+| `occurredAt` | `Instant` | Wall-clock time of the event. |
+| `getEventType()` | `abstract String` | Logical event name (e.g. `"UserRegisteredEvent"`). |
 
-### 3. `ZeabayKafkaAutoConfiguration`
-Automatically configures `KafkaTemplate`, `ConsumerFactory`, and `ProducerFactory` with Zeabay defaults.
+### 2. Pre-built Domain Events
+
+| Class | Package | Topic | Consumer |
+|---|---|---|---|
+| `UserRegisteredEvent` | `kafka.event.user` | `pulse.user.registered` | user-profile-service |
+| `EmailVerificationRequestedEvent` | `kafka.event.auth` | `pulse.auth.email-verification` | mail-service |
+
+### 3. `ZeabayKafkaProperties`
+Typed configuration with production-safe defaults:
+
+| Property prefix | Key defaults |
+|---|---|
+| `zeabay.kafka.producer` | `acks=all`, `retries=3`, `enableIdempotence=true` |
+| `zeabay.kafka.consumer` | `groupIdPrefix=pulse`, `autoOffsetReset=earliest`, `enableAutoCommit=false` |
+| `zeabay.kafka.dlq` | `enabled=true`, `suffix=".dlq"`, `maxAttempts=3` |
+
+### 4. `ZeabayKafkaAutoConfiguration`
+Automatically configures `KafkaTemplate`, `ConsumerFactory`, and `ProducerFactory` using `ZeabayKafkaProperties`. All beans are `@ConditionalOnMissingBean` — override as needed.
 
 ## 🚀 How to Use
 
-### 1. Define an Event
-Extend `BaseEvent` for your message payloads:
+### 1. Define a Domain Event
+Extend `BaseEvent` and provide the event type constant:
 
 ```java
-@Data
+@Getter
 @EqualsAndHashCode(callSuper = true)
-public class UserRegisteredEvent extends BaseEvent {
-    private String username;
-    private String email;
-}
-```
+public class OrderCreatedEvent extends BaseEvent {
 
-### 2. Publish an Event
-```java
-@Service
-@RequiredArgsConstructor
-public class MyProducer {
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    public static final String EVENT_TYPE = "OrderCreatedEvent";
 
-    public void send(UserRegisteredEvent event) {
-        kafkaTemplate.send("user-topic", String.valueOf(event.getAggregateId()), event);
+    private final String orderId;
+    private final Long customerId;
+
+    @Builder
+    public OrderCreatedEvent(String eventId, String traceId, Instant occurredAt,
+                             String orderId, Long customerId) {
+        super(eventId, traceId, occurredAt);
+        this.orderId = orderId;
+        this.customerId = customerId;
+    }
+
+    @Override
+    public String getEventType() {
+        return EVENT_TYPE;
     }
 }
 ```
 
-## ⚙️ Configuration (application.yml)
+### 2. Publish via Transactional Outbox
+Always publish domain events through `zeabay-outbox` rather than calling `KafkaTemplate` directly. This guarantees at-least-once delivery even if Kafka is temporarily unavailable.
+
+### 3. Configuration (application.yml)
 ```yaml
 zeabay:
   kafka:
@@ -55,10 +81,11 @@ zeabay:
       enable-idempotence: true
     dlq:
       enabled: true
-      suffix: ".dlq"
+      suffix: .dlq
+      max-attempts: 3
 ```
 
 ## ⚠️ System Impact
-- **Reliability**: Idempotent producers and DLQs prevent data loss and duplicates during transient failures.
+- **Reliability**: Idempotent producers and DLQs prevent data loss during transient failures.
 - **Scalability**: Decouples microservices through asynchronous, event-driven communication.
-- **Observability**: Trace IDs are propagated through event headers, allowing end-to-end flow tracking across service boundaries.
+- **Observability**: `traceId` is carried in every event, enabling end-to-end request tracing across service boundaries.

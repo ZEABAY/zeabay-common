@@ -36,8 +36,17 @@ public class ZeabayGlobalExceptionHandler {
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleBusiness(
       BusinessException ex, ServerWebExchange exchange) {
 
-    return ZeabayResponses.error(
-        exchange, HttpStatus.BAD_REQUEST, ex.getErrorCode(), ex.getMessage());
+    HttpStatus status =
+        switch (ex.getErrorCode()) {
+          case NOT_FOUND -> HttpStatus.NOT_FOUND;
+          case USER_ALREADY_EXISTS -> HttpStatus.CONFLICT;
+          case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
+          case FORBIDDEN -> HttpStatus.FORBIDDEN;
+          case INTERNAL_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
+          default -> HttpStatus.BAD_REQUEST;
+        };
+
+    return ZeabayResponses.error(exchange, status, ex.getErrorCode(), ex.getMessage());
   }
 
   @ExceptionHandler(ResponseStatusException.class)

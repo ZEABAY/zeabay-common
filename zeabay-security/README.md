@@ -1,27 +1,55 @@
 # Zeabay Security
 
-The `zeabay-security` module provides a hardened, reactive security foundation for Zeabay microservices, integrating seamlessly with IAM providers like Keycloak.
+The `zeabay-security` module provides a hardened, reactive security foundation for Zeabay microservices, integrating with Keycloak as the OAuth2/OIDC Identity Provider.
 
 ## 🛠️ Technology Stack
 - **Spring Security (Reactive)**: Security framework for WebFlux.
-- **OAuth2 / JWT**: Standard for stateless authentication.
-- **Keycloak**: Primary Identity Provider (IDP).
+- **OAuth2 Resource Server / JWT**: Stateless authentication via Keycloak-issued JWTs.
+- **Spring Data R2DBC Auditing**: Integration with `createdBy` / `updatedBy` audit fields.
 
 ## 📦 Core Components
 
 ### 1. `ZeabaySecurityAutoConfiguration`
-Automatically secures all endpoints while providing sane defaults (like permitting health checks and Swagger UI). It configures the JWT decoder and resource server settings.
+Registers a default `SecurityWebFilterChain` (`@ConditionalOnMissingBean`) that:
+- Permits `/actuator/**` unauthenticated.
+- Requires authentication on all other endpoints.
+- Disables CSRF, HTTP Basic, and form login.
+- Configures CORS from `ZeabaySecurityProperties`.
+
+Services override the filter chain by declaring their own `SecurityWebFilterChain` bean (e.g. `auth-service` permits `/api/v1/auth/**` publicly).
 
 ### 2. `ZeabayReactiveAuditorAware`
-Integrates with the Security Context to provide the current user's ID to `zeabay-r2dbc` for auditing purposes (`createdBy`, `lastModifiedBy`).
+Reads `Authentication.getName()` from `ReactiveSecurityContextHolder`; defaults to `"system"` when unauthenticated. Overrides the `zeabay-r2dbc` fallback bean so `createdBy` / `updatedBy` reflect the actual user.
 
 ### 3. `ZeabaySecurityProperties`
-Exposes configuration properties to customize security behavior via YAML.
+Typed YAML configuration for CORS and JWT token lifetimes.
+
+| Property | Default |
+|---|---|
+| `zeabay.security.cors.allowed-origins` | `["http://localhost:3000"]` |
+| `zeabay.security.cors.allowed-methods` | `[GET, POST, PUT, DELETE, OPTIONS, PATCH]` |
+| `zeabay.security.cors.allowed-headers` | `["*"]` |
+| `zeabay.security.cors.exposed-headers` | `["X-Trace-Id", "Authorization"]` |
+| `zeabay.security.cors.allow-credentials` | `true` |
+| `zeabay.security.jwt.access-token-expiry` | `15m` |
+| `zeabay.security.jwt.refresh-token-expiry` | `7d` |
 
 ## 🚀 How to Use
 
-### 1. Secure your Endpoints
-By default, all endpoints are secured. Use `@PreAuthorize` for fine-grained role-based access control (RBAC):
+### 1. JWT Resource Server Configuration
+Configure the Keycloak issuer URI via standard Spring Security properties:
+
+```yaml
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9080/realms/pulse
+```
+
+### 2. Role-based Access Control
+Use `@PreAuthorize` for fine-grained RBAC once JWT validation is active:
 
 ```java
 @GetMapping("/admin")
@@ -31,16 +59,23 @@ public Mono<String> adminOnly() {
 }
 ```
 
-### 2. Configuration (application.yml)
-```yaml
-zeabay:
-  security:
-    enabled: true
-    issuer-uri: https://keycloak.example.com/realms/zeabay
-    resource: pulse-service
+### 3. Custom Security Filter Chain
+Override the default filter chain in your service:
+
+```java
+@Bean
+public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
+    return http
+        .authorizeExchange(ex -> ex
+            .pathMatchers("/api/v1/auth/**").permitAll()
+            .anyExchange().authenticated())
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+        .csrf(ServerHttpSecurity.CsrfSpec::disable)
+        .build();
+}
 ```
 
 ## ⚠️ System Impact
-- **Security**: Ensures a "secure by default" posture across all microservices.
-- **Integration**: Zero-config connection to Keycloak for authentication.
-- **Observability**: Automatically attributes data changes to the specific user making the request.
+- **Security**: Enforces a "secure by default" posture — all endpoints require a valid JWT unless explicitly permitted.
+- **Integration**: Zero-config CORS and auditor integration; only the Keycloak issuer URI needs to be set.
+- **Observability**: Data changes are automatically attributed to the authenticated user via reactive auditing.

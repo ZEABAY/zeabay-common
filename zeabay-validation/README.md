@@ -9,39 +9,54 @@ The `zeabay-validation` module provides a centralized approach to input validati
 ## 📦 Core Components
 
 ### 1. `ZeabayValidator`
-A wrapper around the Jakarta `Validator` that simplifies programmatic validation within services.
+A static utility class wrapping the Jakarta `Validator`. Used for programmatic validation inside services or Kafka consumers where Spring MVC binding is not available.
+
+| Method | Description |
+|---|---|
+| `validate(T object)` | Runs Bean Validation; returns `List<ValidationError>` (empty if valid). |
+| `isValid(T object)` | Convenience boolean check. |
 
 ### 2. `ValidationError`
-A standard model used by `zeabay-webflux` to represent validation failures in API responses.
+A `record(String field, String message)` representing a single field-level violation.
+
+The `zeabay-webflux` module also defines `com.zeabay.common.api.model.ValidationError` (identical shape) used inside `ErrorResponse` for HTTP API responses.
 
 ## 🚀 How to Use
 
 ### 1. Declarative Validation (Controllers)
-Annotate your DTOs with standard JSR-303 annotations:
+Annotate your DTOs with standard JSR-303 annotations and use `@Valid` in the controller:
 
 ```java
-public record UserRegistrationRequest(
-    @NotBlank String username,
+public record RegisterRequest(
+    @NotBlank @Size(min = 3, max = 50) String username,
     @Email @NotBlank String email,
-    @Size(min = 8) String password
+    @NotBlank @Size(min = 8) String password
 ) {}
 
-@PostMapping
-public Mono<Void> register(@Valid @RequestBody UserRegistrationRequest request) {
+@PostMapping("/register")
+public Mono<ResponseEntity<ZeabayApiResponse<RegisterApiResponse>>> register(
+    @Valid @RequestBody RegisterRequest request) {
     // ...
 }
 ```
 
+`ZeabayGlobalExceptionHandler` catches `WebExchangeBindException` and returns a structured `400` with per-field errors automatically.
+
 ### 2. Programmatic Validation (Services)
-Inject `ZeabayValidator` for manual validation:
+Use the static methods directly — no injection needed:
 
 ```java
-public void process(MyDto dto) {
-    validator.validate(dto); // Throws exception if invalid
+public Mono<Void> processEvent(MyDto dto) {
+    List<ValidationError> errors = ZeabayValidator.validate(dto);
+    if (!errors.isEmpty()) {
+        return Mono.error(new BusinessException(ErrorCode.VALIDATION_ERROR,
+            errors.get(0).message()));
+    }
+    return doProcess(dto);
 }
 ```
 
 ## ⚠️ System Impact
-- **Consistency**: API users receive the same error structure regardless of which service they call.
-- **Security**: Prevents malformed data from reaching the core business logic.
-- **UX**: Provides detailed feedback (which field failed and why) to the frontend.
+- **Consistency**: API consumers receive the same error structure regardless of which service they call.
+- **Security**: Prevents malformed data from reaching core business logic.
+- **UX**: Provides detailed feedback (which field failed and why) to frontend clients.

@@ -1,53 +1,73 @@
 # Zeabay Keycloak
 
-The `zeabay-keycloak` module provides a simplified API and client for interacting with Keycloak Identity Provider (IDP). It encapsulates administrative tasks like user registration and token operations.
+The `zeabay-keycloak` module provides a reactive façade over the Keycloak Identity Provider (IDP). It encapsulates user registration, token operations, and administrative actions behind a clean, injectable client.
 
 ## 🛠️ Technology Stack
-- **Keycloak Admin Client**: Java SDK for Keycloak management.
-- **WebClient (Spring Framework)**: For high-performance reactive HTTP calls.
+- **Keycloak Admin Client**: Java SDK for Keycloak management (blocking, offloaded to `boundedElastic`).
+- **WebClient (Spring Framework)**: For reactive HTTP calls to the OIDC token endpoint.
 - **Project Reactor**: Asynchronous execution.
 
 ## 📦 Core Components
 
 ### 1. `ZeabayKeycloakClient`
-The primary interface for microservices. It provides methods for:
-- `registerUser`: Creates a new user in Keycloak with a password.
-- `loginUser`: Exchanges credentials for JWT access/refresh tokens.
+The primary interface for microservices.
+
+| Method | Description |
+|---|---|
+| `registerUser(KeycloakRegistrationRequest)` | Creates a new user in Keycloak; returns the Keycloak user UUID. |
+| `loginUser(KeycloakTokenRequest)` | Exchanges credentials for JWT access/refresh tokens (`password` grant). |
+| `refreshToken(String refreshToken)` | Exchanges a refresh token for a new token pair (`refresh_token` grant). |
+| `setEmailVerified(String keycloakId, boolean verified)` | Updates the `emailVerified` flag on a Keycloak user. |
+| `logout(String keycloakId)` | Invalidates all sessions for the user via Admin SDK. |
 
 ### 2. `KeycloakProperties`
-Configuration class for realm names, client IDs, secrets, and auth server URLs.
+Configuration record bound to the `keycloak.*` YAML prefix.
+
+### 3. DTOs
+| Class | Purpose |
+|---|---|
+| `KeycloakRegistrationRequest` | Input for `registerUser` (`username`, `email`, `password`). |
+| `KeycloakTokenRequest` | Input for `loginUser` (`usernameOrEmail`, `password`). |
+| `KeycloakTokenResponse` | Output token pair (`accessToken`, `refreshToken`, `expiresIn`). |
 
 ## 🚀 How to Use
 
-### 1. Configuration
-Set up your Keycloak details in `application.yml`:
+### 1. Configuration (`application.yml`)
 ```yaml
-zeabay:
-  keycloak:
-    auth-server-url: https://idp.zeabay.com
-    realm: zeabay
-    resource: pulse-client
-    credentials:
-      secret: ${KEYCLOAK_SECRET}
+keycloak:
+  auth-server-url: http://localhost:9080
+  realm: pulse
+  resource: pulse-client
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET}
+  admin:
+    username: ${KEYCLOAK_ADMIN_USERNAME}
+    password: ${KEYCLOAK_ADMIN_PASSWORD}
 ```
 
+`ZeabayKeycloakAutoConfiguration` activates only when `keycloak.auth-server-url` is present.
+
 ### 2. Use the Client
-Inject `ZeabayKeycloakClient` into your registration or auth service:
+Inject `ZeabayKeycloakClient` into your service:
 
 ```java
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthServiceImpl {
     private final ZeabayKeycloakClient keycloakClient;
 
-    public Mono<String> signup(RegistrationRequest req) {
-        return keycloakClient.registerUser(new KeycloakRegistrationRequest(
-            req.username(), req.email(), req.password()));
+    public Mono<String> signup(RegisterUserCommand cmd) {
+        return keycloakClient.registerUser(
+            KeycloakRegistrationRequest.builder()
+                .username(cmd.username())
+                .email(cmd.email())
+                .password(cmd.password())
+                .build());
     }
 }
 ```
 
 ## ⚠️ System Impact
-- **Decoupling**: Business services don't need to know the internal details of Keycloak's APIs or SDKs.
-- **Reliability**: Uses `Schedulers.boundedElastic()` for blocking Admin SDK calls to ensure they don't starve the Netty event loop.
-- **Security**: Centralizes sensitive operations like credential handling in a single, tested library.
+- **Decoupling**: Business services don't need to know Keycloak's internal APIs or SDK details.
+- **Reliability**: Blocking Admin SDK calls are offloaded to `Schedulers.boundedElastic()` so they don't starve the Netty event loop.
+- **Security**: Centralizes sensitive credential handling in a single, tested library.

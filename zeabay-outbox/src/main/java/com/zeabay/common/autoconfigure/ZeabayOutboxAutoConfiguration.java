@@ -27,6 +27,13 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableConfigurationProperties(OutboxProperties.class)
 public class ZeabayOutboxAutoConfiguration {
 
+  /**
+   * Creates the {@code outbox_events} table on startup via {@code schema-outbox.sql}.
+   *
+   * <p>The script uses {@code CREATE TABLE IF NOT EXISTS} and {@code CREATE INDEX IF NOT EXISTS},
+   * so it is idempotent and safe to run on every startup. Services must NOT define {@code
+   * outbox_events} in their own Flyway migrations.
+   */
   @Bean
   public ConnectionFactoryInitializer outboxInitializer(ConnectionFactory connectionFactory) {
     ConnectionFactoryInitializer initializer = new ConnectionFactoryInitializer();
