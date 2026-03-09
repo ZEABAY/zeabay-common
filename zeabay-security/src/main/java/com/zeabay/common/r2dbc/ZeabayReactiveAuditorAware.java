@@ -1,5 +1,6 @@
 package com.zeabay.common.r2dbc;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.ReactiveAuditorAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -17,6 +18,7 @@ public class ZeabayReactiveAuditorAware implements ReactiveAuditorAware<String> 
   private static final String SYSTEM = "system";
 
   @Override
+  @NonNull
   public Mono<String> getCurrentAuditor() {
     return ReactiveSecurityContextHolder.getContext()
         .mapNotNull(SecurityContext::getAuthentication)

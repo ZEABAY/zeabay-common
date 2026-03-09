@@ -15,5 +15,6 @@ public enum ErrorCode {
   BAD_REQUEST("BAD_REQUEST"),
   INTERNAL_ERROR("INTERNAL_ERROR");
 
+  // TODO private final int httpStatus; eklenecek.
   private final String code;
 }

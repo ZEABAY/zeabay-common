@@ -19,7 +19,6 @@ import reactor.util.context.ContextView;
 @Order(Ordered.LOWEST_PRECEDENCE - 1)
 public class LoggingAspect {
 
-  public static final String TRACE_ID_CTX_KEY = "traceId";
   private static final String HIDDEN_VALUE = "[HIDDEN]";
 
   @Around("@annotation(loggable) || @within(loggable)")
@@ -37,9 +36,10 @@ public class LoggingAspect {
 
     boolean logArgs = loggable != null && loggable.logArgs();
     boolean logResult = loggable != null && loggable.logResult();
-
+    // TODO İşlem gerçekten başladığında (subscribe olunduğunda) log süreyi başlat.
     String argsString = logArgs ? Arrays.toString(joinPoint.getArgs()) : HIDDEN_VALUE;
-    log.info("{} ==> [{}] called with args: {}", getLogPrefixFromMdc(), methodId, argsString);
+    // TODO Giriş logunu MDC'den değil, garanti olan Reactor Context üzerinden bas
+    log.debug("{} ==> [{}] called with args: {}", getLogPrefixFromMdc(), methodId, argsString);
 
     long startTime = System.currentTimeMillis();
 
@@ -58,6 +58,12 @@ public class LoggingAspect {
       throw ex;
     }
 
+    if (result == null) {
+      long duration = System.currentTimeMillis() - startTime;
+      log.debug("{} <== [{}] returned void in {}ms", getLogPrefixFromMdc(), methodId, duration);
+      return null;
+    }
+
     return switch (result) {
       case Mono<?> mono ->
           mono.transformDeferredContextual(
@@ -73,7 +79,7 @@ public class LoggingAspect {
         long duration = System.currentTimeMillis() - startTime;
         String resultString = logResult ? String.valueOf(result) : HIDDEN_VALUE;
 
-        log.info(
+        log.debug(
             "{} <== [{}] returned in {}ms with result: {}",
             getLogPrefixFromMdc(),
             methodId,
@@ -87,7 +93,9 @@ public class LoggingAspect {
 
   private String getLogPrefixFromMdc() {
     String traceId =
-        MDC.get(TRACE_ID_CTX_KEY) != null ? MDC.get(TRACE_ID_CTX_KEY) : "missing-trace-id";
+        MDC.get(ZeabayConstants.TRACE_ID_CTX_KEY) != null
+            ? MDC.get(ZeabayConstants.TRACE_ID_CTX_KEY)
+            : "missing-trace-id";
     String ip =
         MDC.get(ZeabayConstants.IP_CTX_KEY) != null
             ? MDC.get(ZeabayConstants.IP_CTX_KEY)
@@ -105,7 +113,7 @@ public class LoggingAspect {
   }
 
   private String getLogPrefix(ContextView ctx) {
-    String traceId = ctx.getOrDefault(TRACE_ID_CTX_KEY, "missing-trace-id");
+    String traceId = ctx.getOrDefault(ZeabayConstants.TRACE_ID_CTX_KEY, "missing-trace-id");
     String ip = ctx.getOrDefault(ZeabayConstants.IP_CTX_KEY, "unknown-ip");
     String user = ctx.getOrDefault(ZeabayConstants.USER_CTX_KEY, "-");
     String method = ctx.getOrDefault(ZeabayConstants.METHOD_CTX_KEY, "-");
@@ -121,7 +129,7 @@ public class LoggingAspect {
             value -> {
               long duration = System.currentTimeMillis() - startTime;
               String resultString = logResult ? String.valueOf(value) : HIDDEN_VALUE;
-              log.info(
+              log.debug(
                   "{} <== [{}] completed in {}ms with result: {}",
                   logPrefix,
                   methodId,
@@ -151,12 +159,12 @@ public class LoggingAspect {
     return flux.doOnComplete(
             () -> {
               long duration = System.currentTimeMillis() - startTime;
-              log.info("{} <== [{}] completed stream in {}ms", logPrefix, methodId, duration);
+              log.debug("{} <== [{}] completed stream in {}ms", logPrefix, methodId, duration);
             })
         .doOnNext(
             value -> {
               if (logResult) {
-                log.info("{}     [{}] emitted: {}", logPrefix, methodId, value);
+                log.debug("{}     [{}] emitted: {}", logPrefix, methodId, value);
               }
             })
         .doOnError(

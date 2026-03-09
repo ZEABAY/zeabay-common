@@ -33,7 +33,10 @@ A high-performance ID generator that produces time-sorted, unique IDs. IDs are m
 | `newLongId()` | `long` | 64-bit TSID for BIGINT primary keys. |
 | `newId()` | `String` | 13-char lowercase Crockford Base32 string (e.g. `054kg95e3i5`). |
 
-### 3. `ZeabayConstants`
+### 3. `ObjectMapper` (bean)
+Jackson `ObjectMapper` with `JavaTimeModule` and ISO-8601 date format (`WRITE_DATES_AS_TIMESTAMPS` disabled). Used by outbox event serialization, Kafka, and REST API. Registered when no other `ObjectMapper` bean exists.
+
+### 4. `ZeabayConstants`
 Centralized repository for Reactor context keys and HTTP header names used in distributed tracing.
 
 | Constant | Value |

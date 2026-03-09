@@ -28,6 +28,11 @@
 
         <dependency>
             <groupId>com.zeabay</groupId>
+            <artifactId>zeabay-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.zeabay</groupId>
             <artifactId>zeabay-logging</artifactId>
         </dependency>
 

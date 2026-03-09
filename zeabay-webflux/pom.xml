@@ -24,6 +24,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Logging AOP (@Loggable) -->
+        <dependency>
+            <groupId>com.zeabay</groupId>
+            <artifactId>zeabay-logging</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Reactive stack -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

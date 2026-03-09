@@ -46,6 +46,7 @@ public class ZeabaySecurityAutoConfiguration {
   @ConditionalOnMissingBean(SecurityWebFilterChain.class)
   public SecurityWebFilterChain zeabayDefaultSecurityFilterChain(
       ServerHttpSecurity http, CorsConfigurationSource zeabayCorsConfigurationSource) {
+    // TODO JWT Resource Server aktivasyonu eklenmeli.
     return http.cors(cors -> cors.configurationSource(zeabayCorsConfigurationSource))
         .csrf(ServerHttpSecurity.CsrfSpec::disable)
         .authorizeExchange(

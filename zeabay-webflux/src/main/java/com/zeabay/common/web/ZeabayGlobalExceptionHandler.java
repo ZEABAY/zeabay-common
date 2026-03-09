@@ -4,6 +4,7 @@ import com.zeabay.common.api.exception.BusinessException;
 import com.zeabay.common.api.exception.ErrorCode;
 import com.zeabay.common.api.model.ValidationError;
 import com.zeabay.common.api.model.ZeabayApiResponse;
+import com.zeabay.common.logging.Loggable;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
@@ -18,6 +19,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 @Slf4j
+@Loggable
 @Order(-2)
 @RestControllerAdvice
 public class ZeabayGlobalExceptionHandler {
@@ -35,7 +37,7 @@ public class ZeabayGlobalExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleBusiness(
       BusinessException ex, ServerWebExchange exchange) {
-
+    // TODO ErrorCode içine error code eklenmeli. bu switch yapısında kurtulmak için
     HttpStatus status =
         switch (ex.getErrorCode()) {
           case NOT_FOUND -> HttpStatus.NOT_FOUND;
@@ -55,7 +57,7 @@ public class ZeabayGlobalExceptionHandler {
 
     HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
     if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
-
+    // TODO ErrorCode içine error code eklenmeli. bu switch yapısında kurtulmak için
     ErrorCode code =
         switch (status) {
           case NOT_FOUND -> ErrorCode.NOT_FOUND;
@@ -69,9 +71,9 @@ public class ZeabayGlobalExceptionHandler {
     return ZeabayResponses.error(exchange, status, code, message);
   }
 
-  @ExceptionHandler(Throwable.class)
+  @ExceptionHandler(Exception.class)
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleAny(
-      Throwable ex, ServerWebExchange exchange) {
+      Exception ex, ServerWebExchange exchange) {
     log.error("Unhandled exception processing request: {}", exchange.getRequest().getURI(), ex);
     return ZeabayResponses.error(
         exchange, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR, "Unexpected error");

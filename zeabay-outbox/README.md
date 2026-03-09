@@ -39,7 +39,7 @@ Background scheduler that polls `outbox_events` and drains PENDING events to Kaf
 ## 🚀 How to Use
 
 ### 1. Database Setup
-The `outbox_events` table is created automatically by `ZeabayOutboxAutoConfiguration` via the bundled `schema-outbox.sql` (`CREATE TABLE IF NOT EXISTS`). No Flyway migration needed.
+The `outbox_events` table is created from the single source `V0__outbox_events.sql`: when `spring.flyway.enabled=true`, Flyway runs it; otherwise `ZeabayOutboxAutoConfiguration` applies it via ConnectionFactoryInitializer (`CREATE TABLE IF NOT EXISTS`).
 
 ### 2. Save Event in Transaction
 Instead of publishing directly to Kafka, save the event within your business transaction using the builder:
@@ -66,11 +66,16 @@ The `OutboxPublisher` will automatically pick up this event and publish it to Ka
 
 ## ⚙️ Configuration (application.yml)
 ```yaml
+spring:
+  flyway:
+    enabled: true   # When true + Flyway on classpath: outbox table first, then Flyway
+
 zeabay:
   outbox:
     polling-interval: 1s
     batch-size: 50
     max-retries: 3
+  # flyway.locations: classpath:db/migration   # optional, default shown
 ```
 
 ## ⚠️ System Impact

@@ -22,6 +22,8 @@
         scope: import
     </description>
 
+    <!--  TODO Tüm mikroservislerde ortak kullanılacak 3. parti kütüphanelerin (MapStruct, TSID, Springdoc vb.) versiyonlarını buraya ekle. -->
+
     <properties>
         <zeabay.version>1.0.0-SNAPSHOT</zeabay.version>
     </properties>

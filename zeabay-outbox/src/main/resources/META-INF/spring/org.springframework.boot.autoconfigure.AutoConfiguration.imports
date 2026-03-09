@@ -1,1 +1,2 @@
 com.zeabay.common.autoconfigure.ZeabayOutboxAutoConfiguration
+com.zeabay.common.autoconfigure.ZeabayOutboxFlywayConfiguration

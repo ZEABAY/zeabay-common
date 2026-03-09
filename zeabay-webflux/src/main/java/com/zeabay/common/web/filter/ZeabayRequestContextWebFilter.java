@@ -2,24 +2,30 @@ package com.zeabay.common.web.filter;
 
 import com.zeabay.common.constant.ZeabayConstants;
 import java.net.InetSocketAddress;
-import java.util.Optional;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
+/**
+ * Populates the reactive context with request metadata (IP, method, path) for structured logging
+ * and tracing.
+ *
+ * <p><b>Security note:</b> User identity is intentionally <em>not</em> read from the {@code
+ * X-User-Id} header here — that approach was vulnerable to log spoofing (any caller could forge the
+ * header). Instead, the authenticated principal name is injected into the context by {@code
+ * ZeabaySecurityContextFilter} in the {@code zeabay-security} module after the JWT has been
+ * verified, keeping this filter free of a Spring Security dependency.
+ */
 public class ZeabayRequestContextWebFilter implements WebFilter {
 
   private static final String X_FORWARDED_FOR = "X-Forwarded-For";
-  private static final String X_USER_ID = "X-User-Id";
 
   @Override
   public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
     ServerHttpRequest request = exchange.getRequest();
-
     String ip = getClientIp(request);
-    String user = getUser(request);
     String method = request.getMethod().name();
     String path = request.getURI().getPath();
 
@@ -28,7 +34,8 @@ public class ZeabayRequestContextWebFilter implements WebFilter {
         .contextWrite(
             ctx ->
                 ctx.put(ZeabayConstants.IP_CTX_KEY, ip)
-                    .put(ZeabayConstants.USER_CTX_KEY, user)
+                    .put(
+                        ZeabayConstants.USER_CTX_KEY, "anonymous") // overwritten by security filter
                     .put(ZeabayConstants.METHOD_CTX_KEY, method)
                     .put(ZeabayConstants.PATH_CTX_KEY, path));
   }
@@ -42,11 +49,5 @@ public class ZeabayRequestContextWebFilter implements WebFilter {
     return remoteAddress != null && remoteAddress.getAddress() != null
         ? remoteAddress.getAddress().getHostAddress()
         : "unknown-ip";
-  }
-
-  private String getUser(ServerHttpRequest request) {
-    return Optional.ofNullable(request.getHeaders().getFirst(X_USER_ID))
-        .filter(u -> !u.isBlank())
-        .orElse("anonymous");
   }
 }

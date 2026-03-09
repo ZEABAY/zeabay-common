@@ -58,6 +58,7 @@ public class ZeabayKafkaAutoConfiguration {
   @ConditionalOnMissingBean
   public ConsumerFactory<String, Object> zeabayKafkaConsumerFactory(ZeabayKafkaProperties props) {
     ZeabayKafkaProperties.Consumer c = props.getConsumer();
+    // TODO addTrustedPackages ya da spring.kafka.consumer.properties.spring.json.trusted.packages=*
     Map<String, Object> config =
         Map.of(
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, props.getBootstrapServers(),

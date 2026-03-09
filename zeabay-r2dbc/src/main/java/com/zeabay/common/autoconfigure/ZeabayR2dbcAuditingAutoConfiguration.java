@@ -3,6 +3,11 @@ package com.zeabay.common.autoconfigure;
 import com.zeabay.common.r2dbc.BaseEntity;
 import com.zeabay.common.tsid.TsidIdGenerator;
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +27,7 @@ import reactor.core.publisher.Mono;
  * zeabay-security} is on the classpath, it registers a security-aware {@link ReactiveAuditorAware}
  * bean that overrides this default.
  */
+@Slf4j
 @AutoConfiguration
 @EnableR2dbcAuditing(auditorAwareRef = "zeabayReactiveAuditorAware")
 public class ZeabayR2dbcAuditingAutoConfiguration {
@@ -33,16 +39,14 @@ public class ZeabayR2dbcAuditingAutoConfiguration {
     return () -> Mono.just("system");
   }
 
-  /**
-   * Assigns a TSID to any {@link BaseEntity} before INSERT if id is null.
-   */
+  /** Assigns a TSID to any {@link BaseEntity} before INSERT if id is null. */
   @Bean
   @ConditionalOnMissingBean(name = "zeabayTsidBeforeConvertCallback")
-  public BeforeConvertCallback<BaseEntity> zeabayTsidBeforeConvertCallback() {
-    TsidIdGenerator generator = new TsidIdGenerator();
+  public BeforeConvertCallback<BaseEntity> zeabayTsidBeforeConvertCallback(
+      TsidIdGenerator tsidIdGenerator) {
     return (entity, table) -> {
       if (entity.getId() == null) {
-        entity.setId(generator.newLongId());
+        entity.setId(tsidIdGenerator.newLongId());
       }
       return Mono.just(entity);
     };
@@ -57,24 +61,41 @@ public class ZeabayR2dbcAuditingAutoConfiguration {
    */
   @Bean
   @ConditionalOnMissingBean(name = "zeabayGenericTsidBeforeConvertCallback")
-  public BeforeConvertCallback<Object> zeabayGenericTsidBeforeConvertCallback() {
-    TsidIdGenerator generator = new TsidIdGenerator();
+  public BeforeConvertCallback<Object> zeabayGenericTsidBeforeConvertCallback(
+      TsidIdGenerator tsidIdGenerator) {
+    Map<Class<?>, Optional<Field>> idFieldCache = new ConcurrentHashMap<>();
+
     return (entity, table) -> {
       if (entity instanceof BaseEntity) {
         return Mono.just(entity);
       }
-      for (Field field : entity.getClass().getDeclaredFields()) {
-        if (field.isAnnotationPresent(Id.class) && field.getType() == Long.class) {
-          field.setAccessible(true);
-          try {
-            if (field.get(entity) == null) {
-              field.set(entity, generator.newLongId());
+
+      Class<?> clazz = entity.getClass();
+
+      Optional<Field> idFieldOpt =
+          idFieldCache.computeIfAbsent(
+              clazz,
+              c ->
+                  Arrays.stream(c.getDeclaredFields())
+                      .filter(f -> f.isAnnotationPresent(Id.class) && f.getType() == Long.class)
+                      .peek(f -> f.setAccessible(true))
+                      .findFirst());
+
+      idFieldOpt.ifPresent(
+          field -> {
+            try {
+              if (field.get(entity) == null) {
+                field.set(entity, tsidIdGenerator.newLongId());
+              }
+            } catch (IllegalAccessException ex) {
+              log.warn(
+                  "Could not assign TSID to field '{}' on {}: {}",
+                  field.getName(),
+                  clazz.getSimpleName(),
+                  ex.getMessage());
             }
-          } catch (IllegalAccessException ignored) {
-          }
-          break;
-        }
-      }
+          });
+
       return Mono.just(entity);
     };
   }

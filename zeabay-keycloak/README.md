@@ -28,7 +28,7 @@ Configuration record bound to the `keycloak.*` YAML prefix.
 |---|---|
 | `KeycloakRegistrationRequest` | Input for `registerUser` (`username`, `email`, `password`). |
 | `KeycloakTokenRequest` | Input for `loginUser` (`usernameOrEmail`, `password`). |
-| `KeycloakTokenResponse` | Output token pair (`accessToken`, `refreshToken`, `expiresIn`). |
+| `ZeabayTokenResponse` | Output token pair (`accessToken`, `refreshToken`, `expiresIn`). |
 
 ## 🚀 How to Use
 

@@ -22,6 +22,12 @@
             <artifactId>zeabay-core</artifactId>
         </dependency>
 
+        <!-- Logging AOP (@Loggable) -->
+        <dependency>
+            <groupId>com.zeabay</groupId>
+            <artifactId>zeabay-logging</artifactId>
+        </dependency>
+
         <!-- Kafka for publishing outbox events -->
         <dependency>
             <groupId>com.zeabay</groupId>
@@ -44,6 +50,18 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- Flyway (optional: when spring.flyway.enabled=true, outbox runs schema then Flyway) -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <dependency>

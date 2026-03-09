@@ -3,12 +3,11 @@ package com.zeabay.common.keycloak.client;
 import com.zeabay.common.keycloak.config.KeycloakProperties;
 import com.zeabay.common.keycloak.dto.KeycloakRegistrationRequest;
 import com.zeabay.common.keycloak.dto.KeycloakTokenRequest;
-import com.zeabay.common.keycloak.dto.KeycloakTokenResponse;
+import com.zeabay.common.keycloak.dto.ZeabayTokenResponse;
 import com.zeabay.common.logging.Loggable;
 import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.admin.client.Keycloak;
@@ -29,6 +28,8 @@ public class ZeabayKeycloakClient {
 
   private final KeycloakProperties properties;
   private final Keycloak keycloakAdminClient;
+  // TODO neden WebClient kullanıyoruz ? zaten Webclient Beanimiz var webflux modülünde o
+  // kullanılmalı.
   private final WebClient webClient = WebClient.builder().build();
 
   public Mono<String> registerUser(KeycloakRegistrationRequest request) {
@@ -74,7 +75,7 @@ public class ZeabayKeycloakClient {
         .subscribeOn(Schedulers.boundedElastic());
   }
 
-  public Mono<KeycloakTokenResponse> loginUser(KeycloakTokenRequest request) {
+  public Mono<ZeabayTokenResponse> loginUser(KeycloakTokenRequest request) {
     MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
     formData.add("client_id", properties.resource());
     formData.add("client_secret", properties.credentials().secret());
@@ -91,7 +92,7 @@ public class ZeabayKeycloakClient {
                     e.getMessage()));
   }
 
-  public Mono<KeycloakTokenResponse> refreshToken(String refreshToken) {
+  public Mono<ZeabayTokenResponse> refreshToken(String refreshToken) {
     MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
     formData.add("client_id", properties.resource());
     formData.add("client_secret", properties.credentials().secret());
@@ -130,13 +131,16 @@ public class ZeabayKeycloakClient {
    * Assigns a realm-level role to the given Keycloak user.
    *
    * @param keycloakId Keycloak user UUID
-   * @param roleName   Realm role name (e.g. {@code "user"}, {@code "admin"})
+   * @param roleName Realm role name (e.g. {@code "user"}, {@code "admin"})
    */
   public Mono<Void> assignRealmRole(String keycloakId, String roleName) {
     return Mono.fromCallable(
             () -> {
               var roleRep =
-                  keycloakAdminClient.realm(properties.realm()).roles().get(roleName)
+                  keycloakAdminClient
+                      .realm(properties.realm())
+                      .roles()
+                      .get(roleName)
                       .toRepresentation();
               keycloakAdminClient
                   .realm(properties.realm())
@@ -151,7 +155,17 @@ public class ZeabayKeycloakClient {
         .subscribeOn(Schedulers.boundedElastic());
   }
 
-  private Mono<KeycloakTokenResponse> postToTokenEndpoint(MultiValueMap<String, String> formData) {
+  public Mono<Void> deleteUser(String keycloakId) {
+    return Mono.fromCallable(
+            () -> {
+              keycloakAdminClient.realm(properties.realm()).users().get(keycloakId).remove();
+              log.warn("Compensating action: deleted Keycloak user {}", keycloakId);
+              return (Void) null;
+            })
+        .subscribeOn(Schedulers.boundedElastic());
+  }
+
+  private Mono<ZeabayTokenResponse> postToTokenEndpoint(MultiValueMap<String, String> formData) {
     String tokenUrl =
         String.format(
             "%s/realms/%s/protocol/openid-connect/token",
@@ -163,12 +177,6 @@ public class ZeabayKeycloakClient {
         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
         .body(BodyInserters.fromFormData(formData))
         .retrieve()
-        .bodyToMono(Map.class)
-        .map(
-            response ->
-                new KeycloakTokenResponse(
-                    (String) response.get("access_token"),
-                    (String) response.get("refresh_token"),
-                    (Integer) response.get("expires_in")));
+        .bodyToMono(ZeabayTokenResponse.class);
   }
 }

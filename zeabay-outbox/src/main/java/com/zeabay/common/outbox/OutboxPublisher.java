@@ -1,11 +1,12 @@
 package com.zeabay.common.outbox;
 
+import com.zeabay.common.logging.Loggable;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 /**
@@ -27,7 +28,7 @@ import reactor.core.publisher.Mono;
  * changing the outbox schema.
  */
 @Slf4j
-@Component
+@Loggable
 @RequiredArgsConstructor
 public class OutboxPublisher {
 
@@ -35,12 +36,35 @@ public class OutboxPublisher {
   private final KafkaTemplate<String, Object> kafkaTemplate;
   private final OutboxProperties properties;
 
-  @Scheduled(fixedDelayString = "${zeabay.outbox.polling-interval-ms:1000}")
+  /**
+   * Guards against concurrent batch execution.
+   *
+   * <p>{@link Scheduled} with {@code fixedDelay} starts timing after the method <em>returns</em>,
+   * not after the reactive pipeline completes. Since {@code subscribe()} returns immediately, a
+   * slow batch can overlap with the next scheduled invocation.<br>
+   * {@code compareAndSet(false, true)} ensures only one cycle runs at a time; {@code doFinally}
+   * guarantees the flag is released on complete, error, or cancel.
+   */
+  private final AtomicBoolean running = new AtomicBoolean(false);
+
+  @Scheduled(
+      initialDelayString = "${zeabay.outbox.initial-delay-ms:5000}",
+      fixedDelayString = "${zeabay.outbox.polling-interval-ms:1000}")
   public void publishPendingEvents() {
-    repository.findPendingEvents(properties.getBatchSize()).flatMap(this::publish).subscribe();
+    if (!running.compareAndSet(false, true)) {
+      log.warn("Outbox poll skipped — previous cycle still running");
+      return;
+    }
+    repository
+        .findPendingEvents(properties.getBatchSize())
+        .flatMap(this::publish)
+        .doFinally(_ -> running.set(false))
+        .subscribe(null, err -> log.error("Outbox poll cycle failed unexpectedly", err));
   }
 
   private Mono<OutboxEvent> publish(OutboxEvent event) {
+    // TODO fromCallable ack beklemez. flatmapten önce .thenReturn(event) eklenmeli
+
     return Mono.fromCallable(
             () -> {
               kafkaTemplate.send(

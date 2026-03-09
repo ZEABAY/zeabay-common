@@ -1,6 +1,5 @@
 package com.zeabay.common.outbox;
 
-import com.zeabay.common.tsid.TsidIdGenerator;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,7 +15,8 @@ import org.springframework.data.relational.core.mapping.Table;
  * transaction</em> as the domain operation. A background {@link OutboxPublisher} then polls for
  * unpublished events and sends them to Kafka.
  *
- * <p>Schema belongs in the common module's schema-outbox.sql initializer.
+ * <p>Schema defined in {@code V0__outbox_events.sql} (single source for Flyway and
+ * ConnectionFactoryInitializer).
  */
 @Getter
 @Setter
@@ -24,7 +24,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @Table("outbox_events")
 public class OutboxEvent {
 
-  @Id @Builder.Default private Long id = new TsidIdGenerator().newLongId();
+  @Id private Long id;
 
   /** e.g. "EmailVerificationRequested" */
   @Column("event_type")
