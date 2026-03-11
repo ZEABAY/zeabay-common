@@ -25,7 +25,7 @@ Standardizes how business-level errors are handled and propagated.
 | `BUSINESS_ERROR` | 400 |
 | `INTERNAL_ERROR` | 500 |
 
-### 2. `TsidIdGenerator`
+### 2. `TsidGenerator`
 A high-performance ID generator that produces time-sorted, unique IDs. IDs are monotonically increasing within the same millisecond, making them ideal for B-Tree indexes.
 
 | Method | Return type | Description |
@@ -56,13 +56,13 @@ if (user == null) {
 ```
 
 ### Generating a TSID
-Inject `TsidIdGenerator` as a Spring bean (registered by `ZeabayCommonAutoConfiguration`):
+Inject `TsidGenerator` as a Spring bean (registered by `ZeabayCommonAutoConfiguration`):
 
 ```java
 @Service
 @RequiredArgsConstructor
 public class MyService {
-    private final TsidIdGenerator idGenerator;
+    private final TsidGenerator idGenerator;
 
     public void createEntity() {
         long id = idGenerator.newLongId();
@@ -73,7 +73,17 @@ public class MyService {
 
 ## ⚙️ Configuration
 
-Enabled automatically via `ZeabayCommonAutoConfiguration`. No additional configuration required.
+Enabled automatically via `ZeabayCommonAutoConfiguration`.
+
+### TSID Node ID (distributed deployments)
+
+Node ID is **auto-resolved** from HOSTNAME:
+
+| Source | Example |
+|--------|---------|
+| HOSTNAME trailing ordinal | `auth-service-0` → 0 (K8s StatefulSet, Docker Compose) |
+| Hostname hash | `my-server` → 0–1023 |
+| Random | When HOSTNAME is empty |
 
 ## ⚠️ System Impact
 - **Standardization**: Forces a consistent error handling pattern across all services.

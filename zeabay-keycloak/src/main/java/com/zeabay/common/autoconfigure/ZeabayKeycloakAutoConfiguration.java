@@ -5,11 +5,15 @@ import com.zeabay.common.keycloak.config.KeycloakProperties;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @AutoConfiguration
+@AutoConfigureAfter(name = "com.zeabay.common.autoconfigure.ZeabayWebClientAutoConfiguration")
 @EnableConfigurationProperties(KeycloakProperties.class)
 @ConditionalOnProperty(prefix = "keycloak", name = "auth-server-url")
 public class ZeabayKeycloakAutoConfiguration {
@@ -27,8 +31,9 @@ public class ZeabayKeycloakAutoConfiguration {
   }
 
   @Bean
+  @ConditionalOnBean(name = "zeabayWebClient")
   public ZeabayKeycloakClient zeabayKeycloakClient(
-      Keycloak keycloakAdminClient, KeycloakProperties properties) {
-    return new ZeabayKeycloakClient(properties, keycloakAdminClient);
+      Keycloak keycloakAdminClient, KeycloakProperties properties, WebClient zeabayWebClient) {
+    return new ZeabayKeycloakClient(properties, keycloakAdminClient, zeabayWebClient);
   }
 }

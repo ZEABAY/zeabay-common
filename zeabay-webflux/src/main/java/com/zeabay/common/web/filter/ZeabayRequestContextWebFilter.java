@@ -2,6 +2,7 @@ package com.zeabay.common.web.filter;
 
 import com.zeabay.common.constant.ZeabayConstants;
 import java.net.InetSocketAddress;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -23,6 +24,7 @@ public class ZeabayRequestContextWebFilter implements WebFilter {
   private static final String X_FORWARDED_FOR = "X-Forwarded-For";
 
   @Override
+  @NonNull
   public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
     ServerHttpRequest request = exchange.getRequest();
     String ip = getClientIp(request);

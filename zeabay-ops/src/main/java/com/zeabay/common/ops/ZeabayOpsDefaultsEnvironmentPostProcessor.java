@@ -17,8 +17,9 @@ import org.springframework.core.env.Profiles;
  * edilebilir.
  *
  * <p>Prod'da sadece health expose edilir (güvenlik). Prometheus/metrics için servis
- * application-prod.yml'de {@code management.endpoints.web.exposure.include} veya {@code
- * management.server.port} ile ayrı port kullanarak açmalıdır.
+ * application-prod.yml'de {@code management.endpoints.web.exposure.include} ile açabilir. Tek port
+ * kullanılır; actuator main port'ta kalır. Prod'da Gateway sadece /api/** route eder, /actuator/**
+ * cluster içinden (Prometheus, K8s probes) erişilir.
  */
 public final class ZeabayOpsDefaultsEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {
@@ -36,8 +37,6 @@ public final class ZeabayOpsDefaultsEnvironmentPostProcessor
   @Override
   public void postProcessEnvironment(
       ConfigurableEnvironment environment, SpringApplication application) {
-    // TODO: Prod'da monitoring erişimi için management.server.port ile ayrı port kullanılacak.
-    // exposure.include prometheus
     Map<String, Object> defaults = new LinkedHashMap<>();
 
     // Kubernetes liveness/readiness probe'ları için health endpoint

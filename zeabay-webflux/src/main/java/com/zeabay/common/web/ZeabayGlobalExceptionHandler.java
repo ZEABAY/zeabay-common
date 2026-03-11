@@ -37,17 +37,7 @@ public class ZeabayGlobalExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleBusiness(
       BusinessException ex, ServerWebExchange exchange) {
-    // TODO ErrorCode içine error code eklenmeli. bu switch yapısında kurtulmak için
-    HttpStatus status =
-        switch (ex.getErrorCode()) {
-          case NOT_FOUND -> HttpStatus.NOT_FOUND;
-          case USER_ALREADY_EXISTS -> HttpStatus.CONFLICT;
-          case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
-          case FORBIDDEN -> HttpStatus.FORBIDDEN;
-          case INTERNAL_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
-          default -> HttpStatus.BAD_REQUEST;
-        };
-
+    HttpStatus status = HttpStatus.valueOf(ex.getErrorCode().getHttpStatus());
     return ZeabayResponses.error(exchange, status, ex.getErrorCode(), ex.getMessage());
   }
 
@@ -55,17 +45,10 @@ public class ZeabayGlobalExceptionHandler {
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleResponseStatus(
       ResponseStatusException ex, ServerWebExchange exchange) {
 
-    HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+    int statusCode = ex.getStatusCode().value();
+    HttpStatus status = HttpStatus.resolve(statusCode);
     if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
-    // TODO ErrorCode içine error code eklenmeli. bu switch yapısında kurtulmak için
-    ErrorCode code =
-        switch (status) {
-          case NOT_FOUND -> ErrorCode.NOT_FOUND;
-          case UNAUTHORIZED -> ErrorCode.UNAUTHORIZED;
-          case FORBIDDEN -> ErrorCode.FORBIDDEN;
-          case BAD_REQUEST -> ErrorCode.BAD_REQUEST;
-          default -> ErrorCode.INTERNAL_ERROR;
-        };
+    ErrorCode code = ErrorCode.fromHttpStatus(statusCode);
 
     String message = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
     return ZeabayResponses.error(exchange, status, code, message);

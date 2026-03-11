@@ -1,5 +1,6 @@
 package com.zeabay.common.autoconfigure;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -15,11 +16,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class ZeabayWebClientAutoConfiguration {
 
   @Bean
-  @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
   public WebClient zeabayWebClient(
-      WebClient.Builder springBootBuilder, // Spring'in orijinal, metrikli builder'ı
+      ObjectProvider<WebClient.Builder> builderProvider,
       ExchangeFilterFunction zeabayTraceIdWebClientFilter) {
 
-    return springBootBuilder.filter(zeabayTraceIdWebClientFilter).build();
+    WebClient.Builder builder = builderProvider.getIfAvailable(WebClient::builder);
+    return builder.filter(zeabayTraceIdWebClientFilter).build();
   }
 }

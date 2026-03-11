@@ -22,6 +22,9 @@ public class OutboxProperties {
   /** How often to poll for PENDING outbox events. Default: 1 second. */
   private Duration pollingInterval = Duration.ofSeconds(1);
 
+  /** Polling interval in milliseconds (alternative to polling-interval). */
+  private long pollingIntervalMs = 1000;
+
   /** Max events to publish per polling cycle. */
   private int batchSize = 50;
 

@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *       group-id-prefix: pulse
  *       auto-offset-reset: earliest
  *       max-poll-records: 100
+ *       trusted-packages: "*"  # or "com.myapp.**,org.acme.**" for production
  *     dlq:
  *       enabled: true
  *       suffix: ".dlq"
@@ -67,6 +68,13 @@ public class ZeabayKafkaProperties {
 
     /** Enable manual offset commit for exactly-once semantics. */
     private boolean enableAutoCommit = false;
+
+    /**
+     * Comma-separated packages trusted for JSON deserialization (JacksonJsonDeserializer). Default
+     * {@code *} trusts all packages. For production, prefer specific packages (e.g. {@code
+     * com.myapp.**,org.acme.**}) to reduce deserialization attack surface.
+     */
+    private String trustedPackages = "*";
   }
 
   @Data

@@ -4,11 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -63,6 +66,8 @@ class OutboxPublisherTest {
       CountDownLatch latch = new CountDownLatch(1);
 
       when(repository.findPendingEvents(anyInt())).thenReturn(Flux.just(event));
+      when(kafkaTemplate.send(anyString(), anyString(), any()))
+          .thenReturn(CompletableFuture.completedFuture(mock(SendResult.class)));
       when(repository.save(any()))
           .thenAnswer(
               inv -> {
@@ -85,6 +90,8 @@ class OutboxPublisherTest {
       CountDownLatch latch = new CountDownLatch(1);
 
       when(repository.findPendingEvents(anyInt())).thenReturn(Flux.just(event));
+      when(kafkaTemplate.send(anyString(), anyString(), any()))
+          .thenReturn(CompletableFuture.completedFuture(mock(SendResult.class)));
       when(repository.save(any()))
           .thenAnswer(
               inv -> {
@@ -211,9 +218,18 @@ class OutboxPublisherTest {
       when(kafkaTemplate.send(anyString(), anyString(), any()))
           .thenAnswer(
               inv -> {
-                // Block until we explicitly allow the first call to proceed
-                firstCanProceed.await(2, TimeUnit.SECONDS);
-                return null;
+                CompletableFuture<SendResult<String, Object>> future = new CompletableFuture<>();
+                new Thread(
+                        () -> {
+                          try {
+                            firstCanProceed.await(2, TimeUnit.SECONDS);
+                            future.complete(mock(SendResult.class));
+                          } catch (InterruptedException e) {
+                            future.completeExceptionally(e);
+                          }
+                        })
+                    .start();
+                return future;
               });
 
       when(repository.save(any()))
@@ -245,6 +261,8 @@ class OutboxPublisherTest {
       OutboxEvent event = pendingEvent();
 
       when(repository.findPendingEvents(anyInt())).thenReturn(Flux.just(event));
+      when(kafkaTemplate.send(anyString(), anyString(), any()))
+          .thenReturn(CompletableFuture.completedFuture(mock(SendResult.class)));
       when(repository.save(any()))
           .thenAnswer(
               inv -> {

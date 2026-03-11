@@ -32,7 +32,7 @@ Typed configuration with production-safe defaults:
 | Property prefix | Key defaults |
 |---|---|
 | `zeabay.kafka.producer` | `acks=all`, `retries=3`, `enableIdempotence=true` |
-| `zeabay.kafka.consumer` | `groupIdPrefix=pulse`, `autoOffsetReset=earliest`, `enableAutoCommit=false` |
+| `zeabay.kafka.consumer` | `groupIdPrefix=pulse`, `autoOffsetReset=earliest`, `enableAutoCommit=false`, `trustedPackages=*` |
 | `zeabay.kafka.dlq` | `enabled=true`, `suffix=".dlq"`, `maxAttempts=3` |
 
 ### 4. `ZeabayKafkaAutoConfiguration`
@@ -79,6 +79,10 @@ zeabay:
     producer:
       acks: all
       enable-idempotence: true
+    consumer:
+      # Packages trusted for JSON deserialization. Default "*" trusts all.
+      # For production, restrict to your domain packages: "com.myapp.**,org.acme.**"
+      trusted-packages: "*"
     dlq:
       enabled: true
       suffix: .dlq

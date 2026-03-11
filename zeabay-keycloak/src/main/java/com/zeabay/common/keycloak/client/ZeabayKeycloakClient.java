@@ -28,9 +28,7 @@ public class ZeabayKeycloakClient {
 
   private final KeycloakProperties properties;
   private final Keycloak keycloakAdminClient;
-  // TODO neden WebClient kullanıyoruz ? zaten Webclient Beanimiz var webflux modülünde o
-  // kullanılmalı.
-  private final WebClient webClient = WebClient.builder().build();
+  private final WebClient webClient;
 
   public Mono<String> registerUser(KeycloakRegistrationRequest request) {
     return Mono.fromCallable(

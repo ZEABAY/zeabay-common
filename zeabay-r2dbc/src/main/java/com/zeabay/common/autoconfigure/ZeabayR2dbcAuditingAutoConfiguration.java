@@ -1,7 +1,7 @@
 package com.zeabay.common.autoconfigure;
 
 import com.zeabay.common.r2dbc.BaseEntity;
-import com.zeabay.common.tsid.TsidIdGenerator;
+import com.zeabay.common.tsid.TsidGenerator;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
@@ -43,10 +43,10 @@ public class ZeabayR2dbcAuditingAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(name = "zeabayTsidBeforeConvertCallback")
   public BeforeConvertCallback<BaseEntity> zeabayTsidBeforeConvertCallback(
-      TsidIdGenerator tsidIdGenerator) {
+      TsidGenerator tsidGenerator) {
     return (entity, table) -> {
       if (entity.getId() == null) {
-        entity.setId(tsidIdGenerator.newLongId());
+        entity.setId(tsidGenerator.newLongId());
       }
       return Mono.just(entity);
     };
@@ -62,7 +62,7 @@ public class ZeabayR2dbcAuditingAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(name = "zeabayGenericTsidBeforeConvertCallback")
   public BeforeConvertCallback<Object> zeabayGenericTsidBeforeConvertCallback(
-      TsidIdGenerator tsidIdGenerator) {
+      TsidGenerator tsidGenerator) {
     Map<Class<?>, Optional<Field>> idFieldCache = new ConcurrentHashMap<>();
 
     return (entity, table) -> {
@@ -85,7 +85,7 @@ public class ZeabayR2dbcAuditingAutoConfiguration {
           field -> {
             try {
               if (field.get(entity) == null) {
-                field.set(entity, tsidIdGenerator.newLongId());
+                field.set(entity, tsidGenerator.newLongId());
               }
             } catch (IllegalAccessException ex) {
               log.warn(

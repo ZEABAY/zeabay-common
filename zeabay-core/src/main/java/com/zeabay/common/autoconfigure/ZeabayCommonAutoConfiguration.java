@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.zeabay.common.security.OtpGenerator;
-import com.zeabay.common.tsid.TsidIdGenerator;
+import com.zeabay.common.tsid.TsidGenerator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -18,10 +18,8 @@ public class ZeabayCommonAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  public TsidIdGenerator tsidIdGenerator() {
-    // TODO Dağıtık sistemlerde ID çakışmaması için önlem alınmalı
-    // (TsidCreator.withNodeId(nodeId);)
-    return new TsidIdGenerator();
+  public TsidGenerator tsidGenerator() {
+    return new TsidGenerator();
   }
 
   /** Cryptographically random 6-digit OTP generator for email verification flows. */

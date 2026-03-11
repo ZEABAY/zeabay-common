@@ -1,6 +1,8 @@
 package com.zeabay.common.autoconfigure;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zeabay.common.kafka.ZeabayKafkaProperties;
+import com.zeabay.common.kafka.support.MapToPojoRecordMessageConverter;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -11,6 +13,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -27,6 +30,7 @@ import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
  * beans are {@code @ConditionalOnMissingBean}.
  */
 @AutoConfiguration
+@EnableKafka
 @ConditionalOnClass(KafkaTemplate.class)
 @EnableConfigurationProperties(ZeabayKafkaProperties.class)
 public class ZeabayKafkaAutoConfiguration {
@@ -58,15 +62,22 @@ public class ZeabayKafkaAutoConfiguration {
   @ConditionalOnMissingBean
   public ConsumerFactory<String, Object> zeabayKafkaConsumerFactory(ZeabayKafkaProperties props) {
     ZeabayKafkaProperties.Consumer c = props.getConsumer();
-    // TODO addTrustedPackages ya da spring.kafka.consumer.properties.spring.json.trusted.packages=*
     Map<String, Object> config =
         Map.of(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, props.getBootstrapServers(),
-            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, c.getAutoOffsetReset(),
-            ConsumerConfig.MAX_POLL_RECORDS_CONFIG, c.getMaxPollRecords(),
-            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, c.isEnableAutoCommit(),
-            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+            props.getBootstrapServers(),
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
+            c.getAutoOffsetReset(),
+            ConsumerConfig.MAX_POLL_RECORDS_CONFIG,
+            c.getMaxPollRecords(),
+            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,
+            c.isEnableAutoCommit(),
+            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+            StringDeserializer.class,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+            JacksonJsonDeserializer.class,
+            "spring.json.trusted.packages",
+            c.getTrustedPackages());
     return new DefaultKafkaConsumerFactory<>(config);
   }
 
@@ -74,10 +85,12 @@ public class ZeabayKafkaAutoConfiguration {
   @ConditionalOnMissingBean
   public ConcurrentKafkaListenerContainerFactory<String, Object>
       zeabayKafkaListenerContainerFactory(
-          ConsumerFactory<String, Object> zeabayKafkaConsumerFactory) {
+          ConsumerFactory<String, Object> zeabayKafkaConsumerFactory,
+          ObjectMapper objectMapper) {
     ConcurrentKafkaListenerContainerFactory<String, Object> factory =
         new ConcurrentKafkaListenerContainerFactory<>();
     factory.setConsumerFactory(zeabayKafkaConsumerFactory);
+    factory.setRecordMessageConverter(new MapToPojoRecordMessageConverter(objectMapper));
     return factory;
   }
 }

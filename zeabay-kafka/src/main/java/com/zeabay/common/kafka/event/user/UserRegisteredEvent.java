@@ -1,5 +1,8 @@
 package com.zeabay.common.kafka.event.user;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.zeabay.common.kafka.BaseEvent;
 import java.time.Instant;
 import lombok.Builder;
@@ -10,6 +13,7 @@ import lombok.ToString;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@JsonDeserialize(builder = UserRegisteredEvent.UserRegisteredEventBuilder.class)
 public class UserRegisteredEvent extends BaseEvent {
 
   public static final String EVENT_TYPE = "UserRegisteredEvent";
@@ -20,12 +24,12 @@ public class UserRegisteredEvent extends BaseEvent {
 
   @Builder
   public UserRegisteredEvent(
-      String eventId,
-      String traceId,
-      Instant occurredAt,
-      String userId,
-      String email,
-      String username) {
+      @JsonProperty("eventId") @JsonAlias("event_id") String eventId,
+      @JsonProperty("traceId") @JsonAlias("trace_id") String traceId,
+      @JsonProperty("occurredAt") @JsonAlias("occurred_at") Instant occurredAt,
+      @JsonProperty("userId") @JsonAlias("user_id") String userId,
+      @JsonProperty("email") String email,
+      @JsonProperty("username") String username) {
     super(eventId, traceId, occurredAt);
     this.userId = userId;
     this.email = email;

@@ -30,7 +30,7 @@ A robust, reactive common library designed for microservices architecture, provi
 #### [`zeabay-core`](./zeabay-core/README.md)
 - **Purpose**: Provides essential utilities, common constants, and base exception classes.
 - **Technology**: Java 25, TSID (Time-Sorted Unique Identifiers).
-- **Usage**: Use `BusinessException` for domain errors and `TsidIdGenerator` for efficient ID generation.
+- **Usage**: Use `BusinessException` for domain errors and `TsidGenerator` for efficient ID generation.
 - **Effect**: Standardizes error handling and ensures high-performance, sortable IDs across the system.
 
 #### [`zeabay-ops`](./zeabay-ops/README.md)

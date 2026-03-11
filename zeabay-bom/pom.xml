@@ -22,10 +22,11 @@
         scope: import
     </description>
 
-    <!--  TODO Tüm mikroservislerde ortak kullanılacak 3. parti kütüphanelerin (MapStruct, TSID, Springdoc vb.) versiyonlarını buraya ekle. -->
-
     <properties>
         <zeabay.version>1.0.0-SNAPSHOT</zeabay.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <tsid.version>5.2.6</tsid.version>
+        <springdoc.version>3.0.1</springdoc.version>
     </properties>
 
     <dependencyManagement>
@@ -84,6 +85,28 @@
                 <groupId>com.zeabay</groupId>
                 <artifactId>zeabay-keycloak</artifactId>
                 <version>${zeabay.version}</version>
+            </dependency>
+
+            <!-- 3rd party libraries used across microservices -->
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.f4b6a3</groupId>
+                <artifactId>tsid-creator</artifactId>
+                <version>${tsid.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+                <version>${springdoc.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

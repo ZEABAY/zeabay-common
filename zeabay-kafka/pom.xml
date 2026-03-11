@@ -37,6 +37,11 @@
             <artifactId>jackson-databind</artifactId>
             <version>3.0.4</version>
         </dependency>
+        <!-- For MapToPojoRecordMessageConverter (Spring Boot uses Jackson 2) -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
 
         <!-- Configuration processor for IDE support -->
         <dependency>

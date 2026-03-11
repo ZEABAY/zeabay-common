@@ -15,6 +15,7 @@ Registers a default `SecurityWebFilterChain` (`@ConditionalOnMissingBean`) that:
 - Requires authentication on all other endpoints.
 - Disables CSRF, HTTP Basic, and form login.
 - Configures CORS from `ZeabaySecurityProperties`.
+- **JWT Resource Server**: When `spring.security.oauth2.resourceserver.jwt` is configured (e.g. `jwk-set-uri` or `issuer-uri`), OAuth2 Resource Server is enabled automatically. Keycloak `realm_access.roles` are mapped to `ROLE_*` authorities.
 
 Services override the filter chain by declaring their own `SecurityWebFilterChain` bean (e.g. `auth-service` permits `/api/v1/auth/**` publicly).
 
@@ -31,13 +32,11 @@ Typed YAML configuration for CORS and JWT token lifetimes.
 | `zeabay.security.cors.allowed-headers` | `["*"]` |
 | `zeabay.security.cors.exposed-headers` | `["X-Trace-Id", "Authorization"]` |
 | `zeabay.security.cors.allow-credentials` | `true` |
-| `zeabay.security.jwt.access-token-expiry` | `15m` |
-| `zeabay.security.jwt.refresh-token-expiry` | `7d` |
 
 ## 🚀 How to Use
 
 ### 1. JWT Resource Server Configuration
-Configure the Keycloak issuer URI via standard Spring Security properties:
+Configure Keycloak via standard Spring Security properties. JWT Resource Server is activated automatically when either property is set:
 
 ```yaml
 spring:
@@ -45,7 +44,10 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9080/realms/pulse
+          # Option A: JWK Set URI (Keycloak)
+          jwk-set-uri: http://localhost:9080/realms/pulse/protocol/openid-connect/certs
+          # Option B: Issuer URI (Spring Boot resolves JWK from issuer metadata)
+          # issuer-uri: http://localhost:9080/realms/pulse
 ```
 
 ### 2. Role-based Access Control

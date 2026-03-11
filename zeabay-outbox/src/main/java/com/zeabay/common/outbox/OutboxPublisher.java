@@ -1,12 +1,15 @@
 package com.zeabay.common.outbox;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zeabay.common.logging.Loggable;
+import jakarta.annotation.PostConstruct;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -35,6 +38,7 @@ public class OutboxPublisher {
   private final OutboxEventRepository repository;
   private final KafkaTemplate<String, Object> kafkaTemplate;
   private final OutboxProperties properties;
+  private final ObjectMapper objectMapper;
 
   /**
    * Guards against concurrent batch execution.
@@ -47,6 +51,20 @@ public class OutboxPublisher {
    */
   private final AtomicBoolean running = new AtomicBoolean(false);
 
+  @PostConstruct
+  void logStartup() {
+    long intervalMs =
+        properties.getPollingIntervalMs() > 0
+            ? properties.getPollingIntervalMs()
+            : (properties.getPollingInterval() != null
+                ? properties.getPollingInterval().toMillis()
+                : 1000L);
+    log.info(
+        "OutboxPublisher started: polling every {}ms, batchSize={}",
+        intervalMs,
+        properties.getBatchSize());
+  }
+
   @Scheduled(
       initialDelayString = "${zeabay.outbox.initial-delay-ms:5000}",
       fixedDelayString = "${zeabay.outbox.polling-interval-ms:1000}")
@@ -55,22 +73,40 @@ public class OutboxPublisher {
       log.warn("Outbox poll skipped — previous cycle still running");
       return;
     }
+    log.debug("Outbox poll cycle started");
     repository
         .findPendingEvents(properties.getBatchSize())
-        .flatMap(this::publish)
+        .collectList()
+        .flatMap(
+            events -> {
+              if (events.isEmpty()) {
+                log.debug("Outbox poll: no pending events");
+                return Mono.empty();
+              }
+              log.info(
+                  "Outbox poll: found {} pending event(s), publishing to Kafka",
+                  events.size());
+              return Flux.fromIterable(events).flatMap(this::publish).then();
+            })
         .doFinally(_ -> running.set(false))
-        .subscribe(null, err -> log.error("Outbox poll cycle failed unexpectedly", err));
+        .subscribe(
+            null,
+            err ->
+                log.error(
+                    "Outbox poll cycle failed (check schema: outbox_events must exist in R2DBC connection schema)",
+                    err));
   }
 
   private Mono<OutboxEvent> publish(OutboxEvent event) {
-    // TODO fromCallable ack beklemez. flatmapten önce .thenReturn(event) eklenmeli
-
     return Mono.fromCallable(
             () -> {
-              kafkaTemplate.send(
-                  event.getTopic(), String.valueOf(event.getAggregateId()), event.getPayload());
-              return event;
+              Object payload =
+                  objectMapper.readValue(event.getPayload(), Object.class);
+              return kafkaTemplate.send(
+                  event.getTopic(), String.valueOf(event.getAggregateId()), payload);
             })
+        .flatMap(Mono::fromFuture)
+        .thenReturn(event)
         .flatMap(
             e -> {
               e.setStatus(OutboxEvent.Status.PUBLISHED);

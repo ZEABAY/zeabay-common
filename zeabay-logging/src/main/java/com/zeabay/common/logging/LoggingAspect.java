@@ -36,17 +36,14 @@ public class LoggingAspect {
 
     boolean logArgs = loggable != null && loggable.logArgs();
     boolean logResult = loggable != null && loggable.logResult();
-    // TODO İşlem gerçekten başladığında (subscribe olunduğunda) log süreyi başlat.
     String argsString = logArgs ? Arrays.toString(joinPoint.getArgs()) : HIDDEN_VALUE;
-    // TODO Giriş logunu MDC'den değil, garanti olan Reactor Context üzerinden bas
-    log.debug("{} ==> [{}] called with args: {}", getLogPrefixFromMdc(), methodId, argsString);
-
     long startTime = System.currentTimeMillis();
 
     Object result;
     try {
       result = joinPoint.proceed();
     } catch (Throwable ex) {
+      log.debug("{} ==> [{}] called with args: {}", getLogPrefixFromMdc(), methodId, argsString);
       long duration = System.currentTimeMillis() - startTime;
       log.error(
           "{} <== [{}] threw exception after {}ms: {}",
@@ -59,6 +56,7 @@ public class LoggingAspect {
     }
 
     if (result == null) {
+      log.debug("{} ==> [{}] called with args: {}", getLogPrefixFromMdc(), methodId, argsString);
       long duration = System.currentTimeMillis() - startTime;
       log.debug("{} <== [{}] returned void in {}ms", getLogPrefixFromMdc(), methodId, duration);
       return null;
@@ -67,15 +65,24 @@ public class LoggingAspect {
     return switch (result) {
       case Mono<?> mono ->
           mono.transformDeferredContextual(
-              (originalMono, ctx) ->
-                  logMonoResult(originalMono, methodId, startTime, logResult, ctx));
+              (originalMono, ctx) -> {
+                String logPrefix = getLogPrefix(ctx);
+                log.debug("{} ==> [{}] called with args: {}", logPrefix, methodId, argsString);
+                long subStartTime = System.currentTimeMillis();
+                return logMonoResult(originalMono, methodId, subStartTime, logResult, ctx);
+              });
 
       case Flux<?> flux ->
           flux.transformDeferredContextual(
-              (originalFlux, ctx) ->
-                  logFluxResult(originalFlux, methodId, startTime, logResult, ctx));
+              (originalFlux, ctx) -> {
+                String logPrefix = getLogPrefix(ctx);
+                log.debug("{} ==> [{}] called with args: {}", logPrefix, methodId, argsString);
+                long subStartTime = System.currentTimeMillis();
+                return logFluxResult(originalFlux, methodId, subStartTime, logResult, ctx);
+              });
 
       default -> {
+        log.debug("{} ==> [{}] called with args: {}", getLogPrefixFromMdc(), methodId, argsString);
         long duration = System.currentTimeMillis() - startTime;
         String resultString = logResult ? String.valueOf(result) : HIDDEN_VALUE;
 

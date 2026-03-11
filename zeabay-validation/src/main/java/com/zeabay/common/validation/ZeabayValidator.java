@@ -23,30 +23,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ZeabayValidator {
 
+  private static final ValidatorFactory FACTORY;
   private static final Validator VALIDATOR;
 
-  // TODO try-with-resources kullandığın için blok bittiğinde ValidatorFactory.close() metodu
-  // otomatik çağrılır. Hibernate Validator, factory kapandığında arka plandaki mesaj
-  // çözümleyicileri (Message Interpolator), kural önbelleklerini (Constraint Caches) ve nesne
-  // yöneticilerini yok eder. Uygulamanın yaşam döngüsü boyunca ValidatorFactory açık kalmalıdır.
-  // try-with-resources bloğunu kaldırarak statik yapıyı şu şekilde düzeltmelisin: public final
-  // class ZeabayValidator {
-  //
-  //  private static final ValidatorFactory FACTORY;
-  //  private static final Validator VALIDATOR;
-  //
-  //  static {
-  //    // Uygulama ayakta olduğu sürece Factory ve Validator yaşamalıdır.
-  //    FACTORY = Validation.buildDefaultValidatorFactory();
-  //    VALIDATOR = FACTORY.getValidator();
-  //  }
-  //
-  //  // ... diğer metodlar
-  // }
   static {
-    try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
-      VALIDATOR = factory.getValidator();
-    }
+    // Factory and Validator must live for the application lifetime. Closing the factory
+    // would destroy message interpolators, constraint caches, and cause validation failures.
+    FACTORY = Validation.buildDefaultValidatorFactory();
+    VALIDATOR = FACTORY.getValidator();
   }
 
   /**
@@ -63,5 +47,16 @@ public final class ZeabayValidator {
   /** Returns true if the given object passes all Bean Validation constraints. */
   public static <T> boolean isValid(T object) {
     return VALIDATOR.validate(object).isEmpty();
+  }
+
+  /**
+   * Formats validation errors as a single comma-separated string (e.g. "email must be valid,
+   * username must not be blank").
+   */
+  public static String formatErrors(List<ValidationError> errors) {
+    return errors.stream()
+        .map(e -> e.field() + " " + e.message())
+        .reduce((a, b) -> a + ", " + b)
+        .orElse("");
   }
 }
