@@ -1,0 +1,82 @@
+# =========================
+# 1. Java & Maven (All OS)
+# =========================
+**/target/
+*.class
+*.log
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# JVM Crash Logs
+hs_err_pid*
+replay_pid*
+
+# Maven Wrapper (Keep the jar!)
+!.mvn/wrapper/maven-wrapper.jar
+
+# =========================
+# 2. OS Specific
+# =========================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon\r\r
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.cab
+*.msi
+*.msm
+*.msp
+$RECYCLE.BIN/
+Desktop.ini
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =========================
+# 3. IDEs (IntelliJ, VS Code, Eclipse)
+# =========================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Eclipse
+.classpath
+.project
+.settings/
+.springBeans
+
+# =========================
+# 4. Environment & Secrets
+# =========================
+.env
+.env.*
+*.pem
+*.key
+*.jks
+*.p12
+secrets/

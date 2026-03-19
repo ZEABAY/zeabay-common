@@ -1,0 +1,2 @@
+com.zeabay.common.autoconfigure.ZeabayR2dbcAuditingAutoConfiguration
+com.zeabay.common.autoconfigure.ZeabayR2dbcFlywayConfiguration
