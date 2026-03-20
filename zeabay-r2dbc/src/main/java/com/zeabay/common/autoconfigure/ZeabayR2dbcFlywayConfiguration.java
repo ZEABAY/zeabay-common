@@ -14,6 +14,8 @@ import org.springframework.boot.r2dbc.autoconfigure.R2dbcAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
+import com.zeabay.common.r2dbc.R2dbcUrlUtils;
+
 import io.r2dbc.spi.ConnectionFactory;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,6 +67,10 @@ public class ZeabayR2dbcFlywayConfiguration {
       this.contributors = contributors;
     }
 
+    private static String parseSchemaFromUrl(String url) {
+      return R2dbcUrlUtils.parseSchema(url);
+    }
+
     @Override
     public void afterPropertiesSet() {
       String r2dbcUrl = env.getProperty("spring.r2dbc.url");
@@ -111,20 +117,6 @@ public class ZeabayR2dbcFlywayConfiguration {
           .migrate();
 
       log.info("ZeabayR2dbcFlywayConfiguration: migrations completed for schema={}", schemaName);
-    }
-
-    private static String parseSchemaFromUrl(String url) {
-      if (url == null || url.isBlank()) return null;
-      int q = url.indexOf('?');
-      if (q < 0) return null;
-      for (String param : url.substring(q + 1).split("&")) {
-        int eq = param.indexOf('=');
-        if (eq > 0 && "schema".equals(param.substring(0, eq).trim())) {
-          String value = param.substring(eq + 1).trim();
-          return value.isEmpty() ? null : value;
-        }
-      }
-      return null;
     }
   }
 }

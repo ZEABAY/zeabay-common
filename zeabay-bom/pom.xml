@@ -14,9 +14,13 @@
     <properties>
         <zeabay.version>1.0.0-SNAPSHOT</zeabay.version>
 
+        <spring-boot.version>4.0.2</spring-boot.version>
         <spring-cloud.version>2025.0.0</spring-cloud.version>
         <keycloak.version>24.0.3</keycloak.version>
         <resteasy.version>6.2.8.Final</resteasy.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <tsid.version>5.2.6</tsid.version>
+        <springdoc.version>3.0.1</springdoc.version>
     </properties>
 
     <dependencyManagement>
@@ -24,7 +28,7 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>4.0.2</version>
+                <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -105,22 +109,22 @@
             <dependency>
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct</artifactId>
-                <version>1.5.5.Final</version>
+                <version>${mapstruct.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct-processor</artifactId>
-                <version>1.5.5.Final</version>
+                <version>${mapstruct.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.f4b6a3</groupId>
                 <artifactId>tsid-creator</artifactId>
-                <version>5.2.6</version>
+                <version>${tsid.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
-                <version>3.0.1</version>
+                <version>${springdoc.version}</version>
             </dependency>
 
             <dependency>

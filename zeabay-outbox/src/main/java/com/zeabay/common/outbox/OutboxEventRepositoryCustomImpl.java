@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Component;
 
+import com.zeabay.common.r2dbc.R2dbcUrlUtils;
+
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
@@ -29,22 +31,8 @@ class OutboxEventRepositoryCustomImpl implements OutboxEventRepositoryCustom {
   OutboxEventRepositoryCustomImpl(
       ConnectionFactory connectionFactory, @Value("${spring.r2dbc.url:}") String r2dbcUrl) {
     this.databaseClient = DatabaseClient.create(connectionFactory);
-    this.schema = parseSchemaFromUrl(r2dbcUrl);
+    this.schema = R2dbcUrlUtils.parseSchema(r2dbcUrl);
     log.info("OutboxEventRepository: using table {}", tableRef());
-  }
-
-  private static String parseSchemaFromUrl(String url) {
-    if (url == null || url.isBlank()) return null;
-    int q = url.indexOf('?');
-    if (q < 0) return null;
-    for (String param : url.substring(q + 1).split("&")) {
-      int eq = param.indexOf('=');
-      if (eq > 0 && "schema".equals(param.substring(0, eq).trim())) {
-        String value = param.substring(eq + 1).trim();
-        return value.isEmpty() ? null : value;
-      }
-    }
-    return null;
   }
 
   private String tableRef() {

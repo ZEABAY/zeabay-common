@@ -20,7 +20,6 @@ import com.zeabay.common.keycloak.config.KeycloakProperties;
 import com.zeabay.common.keycloak.dto.KeycloakRegistrationRequest;
 import com.zeabay.common.keycloak.dto.KeycloakTokenRequest;
 import com.zeabay.common.keycloak.dto.ZeabayTokenResponse;
-import com.zeabay.common.logging.Loggable;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Slf4j
-@Loggable
 @RequiredArgsConstructor
 public class ZeabayKeycloakClient {
 

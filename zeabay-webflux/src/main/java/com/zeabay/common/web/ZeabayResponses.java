@@ -69,7 +69,7 @@ public final class ZeabayResponses {
           Instant now = Instant.now();
           ErrorResponse err =
               new ErrorResponse(
-                  code.getCode(), message, request.getPath().value(), now, validationErrors);
+                  code.name(), message, request.getPath().value(), now, validationErrors);
           return Mono.just(new ZeabayApiResponse<>(false, null, err, tid, now));
         });
   }
@@ -87,12 +87,25 @@ public final class ZeabayResponses {
     String path = exchange.getRequest().getPath().value();
     Instant now = Instant.now();
 
-    ErrorResponse err = new ErrorResponse(code.getCode(), message, path, now, validationErrors);
+    ErrorResponse err = new ErrorResponse(code.name(), message, path, now, validationErrors);
     return Mono.just(ResponseEntity.status(status).body(ZeabayApiResponse.fail(err, tid)));
   }
 
   public static Mono<ResponseEntity<ZeabayApiResponse<Void>>> error(
       ServerWebExchange exchange, HttpStatus status, ErrorCode code, String message) {
     return error(exchange, status, code, message, List.of());
+  }
+
+  // -------- Fail for framework exceptions (no ErrorCode) --------
+
+  public static Mono<ResponseEntity<ZeabayApiResponse<Void>>> error(
+      ServerWebExchange exchange, HttpStatus status, String code, String message) {
+
+    String tid = traceId(exchange);
+    String path = exchange.getRequest().getPath().value();
+    Instant now = Instant.now();
+
+    ErrorResponse err = new ErrorResponse(code, message, path, now, List.of());
+    return Mono.just(ResponseEntity.status(status).body(ZeabayApiResponse.fail(err, tid)));
   }
 }

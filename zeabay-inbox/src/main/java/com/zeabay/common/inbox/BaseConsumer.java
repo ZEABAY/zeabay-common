@@ -1,14 +1,11 @@
 package com.zeabay.common.inbox;
 
+import com.zeabay.common.kafka.BaseEvent;
 import java.time.Instant;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
-
-import com.zeabay.common.kafka.BaseEvent;
-
-import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 /**
@@ -30,21 +27,13 @@ public abstract class BaseConsumer<T extends BaseEvent> {
   private String producedFrom;
 
   /**
-   * Call this from your {@code @KafkaListener} method. Handles subscribe + error logging so the
-   * Kafka listener thread never swallows exceptions silently.
+   * Call this from your {@code @KafkaListener} method. Uses {@code .block()} to ensure errors
+   * propagate to the Kafka listener thread, enabling Spring Kafka's error handler (retry + DLQ).
    *
    * @param event the incoming domain event
    */
   public void handleEvent(T event) {
-    processEvent(event)
-        .doOnError(
-            e ->
-                log.error(
-                    "Unhandled error processing event: id={}, producedFrom={}, error={}",
-                    event.getEventId(),
-                    producedFrom,
-                    e.getMessage()))
-        .subscribe();
+    processEvent(event).block();
   }
 
   /**
@@ -67,7 +56,7 @@ public abstract class BaseConsumer<T extends BaseEvent> {
     return inboxEventRepository
         .save(record)
         .flatMap(
-            saved ->
+            _ ->
                 doProcess(event)
                     .doOnSuccess(_ -> log.debug("Processed event: id={}", event.getEventId()))
                     .onErrorResume(
@@ -80,7 +69,7 @@ public abstract class BaseConsumer<T extends BaseEvent> {
                         }))
         .onErrorResume(
             DataIntegrityViolationException.class,
-            e -> {
+            _ -> {
               log.debug(
                   "Duplicate event skipped: id={}, producedFrom={}",
                   event.getEventId(),

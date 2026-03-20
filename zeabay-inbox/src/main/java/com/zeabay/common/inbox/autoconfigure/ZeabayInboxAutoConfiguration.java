@@ -4,7 +4,6 @@ import org.flywaydb.core.Flyway;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.r2dbc.autoconfigure.R2dbcAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
@@ -14,7 +13,6 @@ import org.springframework.r2dbc.connection.init.ConnectionFactoryInitializer;
 import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator;
 
 import com.zeabay.common.inbox.InboxEventRepository;
-import com.zeabay.common.inbox.InboxProperties;
 import com.zeabay.common.inbox.InboxR2dbcMigrationContributor;
 
 import io.r2dbc.spi.ConnectionFactory;
@@ -33,7 +31,6 @@ import io.r2dbc.spi.ConnectionFactory;
 @AutoConfiguration(after = R2dbcAutoConfiguration.class)
 @EnableR2dbcRepositories(basePackages = "com.zeabay.common.inbox")
 @ConditionalOnClass({KafkaTemplate.class, InboxEventRepository.class})
-@EnableConfigurationProperties(InboxProperties.class)
 public class ZeabayInboxAutoConfiguration {
 
   /**

@@ -21,7 +21,5 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "zeabay.redis")
 public class ZeabayRedisProperties {
 
-  private String host = "localhost";
-  private int port = 6379;
   private String prefix = "zeabay";
 }

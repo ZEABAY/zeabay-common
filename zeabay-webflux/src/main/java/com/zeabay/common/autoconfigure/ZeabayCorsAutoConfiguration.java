@@ -5,6 +5,7 @@ import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebA
 import java.util.List;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.cors.CorsConfiguration;
@@ -15,6 +16,7 @@ import com.zeabay.common.constant.ZeabayConstants;
 
 @AutoConfiguration
 @ConditionalOnWebApplication(type = REACTIVE)
+@ConditionalOnMissingClass("org.springframework.security.web.server.SecurityWebFilterChain")
 public class ZeabayCorsAutoConfiguration {
 
   @Bean

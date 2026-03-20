@@ -16,13 +16,11 @@ import com.zeabay.common.api.exception.BusinessException;
 import com.zeabay.common.api.exception.ErrorCode;
 import com.zeabay.common.api.model.ValidationError;
 import com.zeabay.common.api.model.ZeabayApiResponse;
-import com.zeabay.common.logging.Loggable;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-@Loggable
 @Order(-2)
 @RestControllerAdvice
 public class ZeabayGlobalExceptionHandler {
@@ -48,13 +46,11 @@ public class ZeabayGlobalExceptionHandler {
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleResponseStatus(
       ResponseStatusException ex, ServerWebExchange exchange) {
 
-    int statusCode = ex.getStatusCode().value();
-    HttpStatus status = HttpStatus.resolve(statusCode);
+    HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
     if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
-    ErrorCode code = ErrorCode.fromHttpStatus(statusCode);
 
     String message = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
-    return ZeabayResponses.error(exchange, status, code, message);
+    return ZeabayResponses.error(exchange, status, status.name(), message);
   }
 
   @ExceptionHandler(Exception.class)
@@ -62,7 +58,7 @@ public class ZeabayGlobalExceptionHandler {
       Exception ex, ServerWebExchange exchange) {
     log.error("Unhandled exception processing request: {}", exchange.getRequest().getURI(), ex);
     return ZeabayResponses.error(
-        exchange, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR, "Unexpected error");
+        exchange, HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Unexpected error");
   }
 
   private ValidationError toValidationError(FieldError fe) {
