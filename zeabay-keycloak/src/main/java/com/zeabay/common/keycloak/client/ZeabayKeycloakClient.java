@@ -113,6 +113,25 @@ public class ZeabayKeycloakClient {
         .subscribeOn(Schedulers.boundedElastic());
   }
 
+  public Mono<Void> resetPassword(String keycloakId, String newPassword) {
+    return Mono.fromCallable(
+            () -> {
+              CredentialRepresentation credential = new CredentialRepresentation();
+              credential.setType(CredentialRepresentation.PASSWORD);
+              credential.setValue(newPassword);
+              credential.setTemporary(false);
+
+              keycloakAdminClient
+                  .realm(properties.realm())
+                  .users()
+                  .get(keycloakId)
+                  .resetPassword(credential);
+              log.info("Reset password for Keycloak user {}", keycloakId);
+              return (Void) null;
+            })
+        .subscribeOn(Schedulers.boundedElastic());
+  }
+
   /**
    * Assigns a realm-level role to the given Keycloak user.
    *
