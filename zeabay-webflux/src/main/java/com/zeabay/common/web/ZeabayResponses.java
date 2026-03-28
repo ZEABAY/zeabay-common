@@ -60,7 +60,7 @@ public final class ZeabayResponses {
   public static <T> Mono<ZeabayApiResponse<T>> fail(
       ServerHttpRequest request,
       ErrorCode code,
-      String message,
+      String messageKey,
       List<ValidationError> validationErrors) {
 
     return Mono.deferContextual(
@@ -69,7 +69,7 @@ public final class ZeabayResponses {
           Instant now = Instant.now();
           ErrorResponse err =
               new ErrorResponse(
-                  code.name(), message, request.getPath().value(), now, validationErrors);
+                  code.name(), messageKey, request.getPath().value(), now, validationErrors);
           return Mono.just(new ZeabayApiResponse<>(false, null, err, tid, now));
         });
   }
@@ -80,32 +80,32 @@ public final class ZeabayResponses {
       ServerWebExchange exchange,
       HttpStatus status,
       ErrorCode code,
-      String message,
+      String messageKey,
       List<ValidationError> validationErrors) {
 
     String tid = traceId(exchange);
     String path = exchange.getRequest().getPath().value();
     Instant now = Instant.now();
 
-    ErrorResponse err = new ErrorResponse(code.name(), message, path, now, validationErrors);
+    ErrorResponse err = new ErrorResponse(code.name(), messageKey, path, now, validationErrors);
     return Mono.just(ResponseEntity.status(status).body(ZeabayApiResponse.fail(err, tid)));
   }
 
   public static Mono<ResponseEntity<ZeabayApiResponse<Void>>> error(
-      ServerWebExchange exchange, HttpStatus status, ErrorCode code, String message) {
-    return error(exchange, status, code, message, List.of());
+      ServerWebExchange exchange, HttpStatus status, ErrorCode code, String messageKey) {
+    return error(exchange, status, code, messageKey, List.of());
   }
 
   // -------- Fail for framework exceptions (no ErrorCode) --------
 
   public static Mono<ResponseEntity<ZeabayApiResponse<Void>>> error(
-      ServerWebExchange exchange, HttpStatus status, String code, String message) {
+      ServerWebExchange exchange, HttpStatus status, String code, String messageKey) {
 
     String tid = traceId(exchange);
     String path = exchange.getRequest().getPath().value();
     Instant now = Instant.now();
 
-    ErrorResponse err = new ErrorResponse(code, message, path, now, List.of());
+    ErrorResponse err = new ErrorResponse(code, messageKey, path, now, List.of());
     return Mono.just(ResponseEntity.status(status).body(ZeabayApiResponse.fail(err, tid)));
   }
 }

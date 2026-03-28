@@ -8,7 +8,7 @@ import lombok.Builder;
 @Builder
 public record ErrorResponse(
     String code,
-    String message,
+    String messageKey,
     String path,
     Instant timestamp,
     List<ValidationError> validationErrors) {}
