@@ -32,14 +32,15 @@ public class ZeabayGlobalExceptionHandler {
     List<ValidationError> errors =
         ex.getFieldErrors().stream().map(this::toValidationError).toList();
     return ZeabayResponses.error(
-        exchange, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR, "Validation failed", errors);
+        exchange, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR, "error.validation", errors);
   }
 
   @ExceptionHandler(BusinessException.class)
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleBusiness(
       BusinessException ex, ServerWebExchange exchange) {
     HttpStatus status = HttpStatus.valueOf(ex.getErrorCode().getHttpStatus());
-    return ZeabayResponses.error(exchange, status, ex.getErrorCode(), ex.getMessage());
+    String messageKey = "error." + ex.getErrorCode().name().toLowerCase();
+    return ZeabayResponses.error(exchange, status, ex.getErrorCode(), messageKey);
   }
 
   @ExceptionHandler(ResponseStatusException.class)
@@ -49,8 +50,8 @@ public class ZeabayGlobalExceptionHandler {
     HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
     if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
 
-    String message = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
-    return ZeabayResponses.error(exchange, status, status.name(), message);
+    String messageKey = "error." + status.name().toLowerCase();
+    return ZeabayResponses.error(exchange, status, status.name(), messageKey);
   }
 
   @ExceptionHandler(Exception.class)
@@ -58,11 +59,15 @@ public class ZeabayGlobalExceptionHandler {
       Exception ex, ServerWebExchange exchange) {
     log.error("Unhandled exception processing request: {}", exchange.getRequest().getURI(), ex);
     return ZeabayResponses.error(
-        exchange, HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Unexpected error");
+        exchange,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "INTERNAL_ERROR",
+        "error.internal_server_error");
   }
 
   private ValidationError toValidationError(FieldError fe) {
-    return new ValidationError(
-        fe.getField(), fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "invalid");
+    String code = fe.getCode() != null ? fe.getCode() : "invalid";
+    String messageKey = "validation." + fe.getField() + "." + code;
+    return new ValidationError(fe.getField(), messageKey);
   }
 }

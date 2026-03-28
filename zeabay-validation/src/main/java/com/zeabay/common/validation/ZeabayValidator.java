@@ -27,7 +27,13 @@ public final class ZeabayValidator {
   public static <T> List<ValidationError> validate(T object) {
     Set<ConstraintViolation<T>> violations = VALIDATOR.validate(object);
     return violations.stream()
-        .map(v -> new ValidationError(v.getPropertyPath().toString(), v.getMessage()))
+        .map(
+            v -> {
+              String code =
+                  v.getConstraintDescriptor().getAnnotation().annotationType().getSimpleName();
+              String messageKey = "validation." + v.getPropertyPath().toString() + "." + code;
+              return new ValidationError(v.getPropertyPath().toString(), messageKey);
+            })
         .toList();
   }
 
@@ -37,7 +43,7 @@ public final class ZeabayValidator {
 
   public static String formatErrors(List<ValidationError> errors) {
     return errors.stream()
-        .map(e -> e.field() + " " + e.message())
+        .map(e -> e.field() + " " + e.messageKey())
         .reduce((a, b) -> a + ", " + b)
         .orElse("");
   }
