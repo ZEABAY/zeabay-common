@@ -4,7 +4,6 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -32,9 +31,9 @@ public class ZeabayKeycloakAutoConfiguration {
   }
 
   @Bean
-  @ConditionalOnBean(name = "zeabayWebClient")
   public ZeabayKeycloakClient zeabayKeycloakClient(
-      Keycloak keycloakAdminClient, KeycloakProperties properties, WebClient zeabayWebClient) {
-    return new ZeabayKeycloakClient(properties, keycloakAdminClient, zeabayWebClient);
+      Keycloak keycloakAdminClient, KeycloakProperties properties) {
+    WebClient webClient = WebClient.builder().build();
+    return new ZeabayKeycloakClient(properties, keycloakAdminClient, webClient);
   }
 }
