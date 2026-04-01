@@ -61,8 +61,8 @@ public class ZeabayGlobalExceptionHandler {
     return ZeabayResponses.error(
         exchange,
         HttpStatus.INTERNAL_SERVER_ERROR,
-        "INTERNAL_ERROR",
-        "error.internal_server_error");
+        ErrorCode.INTERNAL_ERROR,
+        "error.internal_error");
   }
 
   private ValidationError toValidationError(FieldError fe) {
