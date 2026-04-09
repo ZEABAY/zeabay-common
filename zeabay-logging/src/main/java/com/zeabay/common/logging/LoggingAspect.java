@@ -38,18 +38,18 @@ public class LoggingAspect {
         (logArgs && log.isDebugEnabled()) ? Arrays.toString(joinPoint.getArgs()) : HIDDEN_VALUE;
 
     Object result;
-    long assemblyTime = System.currentTimeMillis(); // Metodun çağrılma anı
+    long assemblyTime = System.currentTimeMillis();
 
     try {
       result = joinPoint.proceed();
     } catch (Throwable ex) {
       logEntry(null, methodId, args);
       log.error(
-          "{} <== [{}] failed after {}ms",
+          "{} <== [{}] failed after {}ms. Reason: {}",
           getLogPrefix(null),
           methodId,
           (System.currentTimeMillis() - assemblyTime),
-          ex);
+          ex.getMessage());
       throw ex;
     }
 
@@ -62,7 +62,6 @@ public class LoggingAspect {
       case Mono<?> mono ->
           mono.transformDeferredContextual(
               (orig, ctx) -> {
-                // Subscription anını (işlemin fiilen başladığı an) burada yakalıyoruz
                 long subStart = System.currentTimeMillis();
                 logEntry(ctx, methodId, args);
                 return logMonoResult(orig, methodId, subStart, logRes, ctx);
@@ -83,8 +82,6 @@ public class LoggingAspect {
       }
     };
   }
-
-  // --- Yardımcı Metotlar (Maksimum DRY) ---
 
   private void logEntry(ContextView ctx, String methodId, String args) {
     if (log.isDebugEnabled()) {
@@ -139,11 +136,11 @@ public class LoggingAspect {
         .doOnError(
             ex ->
                 log.error(
-                    "{} <== [{}] failed in {}ms",
+                    "{} <== [{}] failed in {}ms. Reason: {}",
                     getLogPrefix(ctx),
                     mId,
                     (System.currentTimeMillis() - start),
-                    ex))
+                    ex.getMessage()))
         .doOnCancel(
             () ->
                 log.warn(
@@ -172,11 +169,11 @@ public class LoggingAspect {
         .doOnError(
             ex ->
                 log.error(
-                    "{} <== [{}] flux failed in {}ms",
+                    "{} <== [{}] flux failed in {}ms. Reason: {}",
                     getLogPrefix(ctx),
                     mId,
                     (System.currentTimeMillis() - start),
-                    ex))
+                    ex.getMessage()))
         .doOnCancel(
             () ->
                 log.warn(
