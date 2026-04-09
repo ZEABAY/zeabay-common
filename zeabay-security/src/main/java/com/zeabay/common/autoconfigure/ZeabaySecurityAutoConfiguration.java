@@ -28,6 +28,13 @@ import com.zeabay.common.security.ZeabaySecurityProperties;
 
 import reactor.core.publisher.Flux;
 
+/**
+ * Autoconfigures WebFlux security with JWT/OAuth2 resource server, CORS, and Keycloak role mapping.
+ *
+ * <p>Public paths from {@link ZeabaySecurityProperties} and actuator endpoints are always
+ * permitted. When a {@link ReactiveJwtDecoder} bean is present, OAuth2 resource server is
+ * configured automatically.
+ */
 // beforeName (string) instead of before (class ref) — ZeabayR2dbcAuditingAutoConfiguration is
 // an optional dependency; using the class literal would cause ClassNotFoundException on the
 // gateway.
@@ -38,6 +45,7 @@ import reactor.core.publisher.Flux;
 @EnableConfigurationProperties(ZeabaySecurityProperties.class)
 public class ZeabaySecurityAutoConfiguration {
 
+  /** Builds a URL-based CORS configuration source from the {@link ZeabaySecurityProperties}. */
   @Bean
   public CorsConfigurationSource zeabayCorsConfigurationSource(ZeabaySecurityProperties props) {
     ZeabaySecurityProperties.Cors cors = props.getCors();
@@ -58,6 +66,10 @@ public class ZeabaySecurityAutoConfiguration {
     return source;
   }
 
+  /**
+   * Builds the default security filter chain. Public paths, actuator, CORS, CSRF, JWT are
+   * configured here.
+   */
   @Bean
   @ConditionalOnMissingBean(SecurityWebFilterChain.class)
   public SecurityWebFilterChain zeabayDefaultSecurityFilterChain(
@@ -105,6 +117,10 @@ public class ZeabaySecurityAutoConfiguration {
     return serverHttp.build();
   }
 
+  /**
+   * Maps Keycloak {@code realm_access.roles} from the JWT into Spring Security {@code ROLE_*}
+   * authorities.
+   */
   @Bean
   @ConditionalOnMissingBean(ReactiveJwtAuthenticationConverter.class)
   @ConditionalOnBean(ReactiveJwtDecoder.class)
@@ -124,6 +140,10 @@ public class ZeabaySecurityAutoConfiguration {
     return converter;
   }
 
+  /**
+   * Registers the security-aware auditor that reads the authenticated principal name. Only active
+   * when {@code zeabay-r2dbc} is on the classpath.
+   */
   // Only registered when zeabay-r2dbc is on the classpath (e.g. auth-service).
   // Skipped on the gateway which does not have a database.
   @Bean

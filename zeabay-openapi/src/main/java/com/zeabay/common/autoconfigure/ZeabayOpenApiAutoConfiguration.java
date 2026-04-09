@@ -12,6 +12,12 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 
+/**
+ * Autoconfigures a shared OpenAPI 3.0 specification with JWT bearer authentication.
+ *
+ * <p>Activates when SpringDoc is on the classpath and {@code springdoc.api-docs.enabled} is not
+ * explicitly disabled. Service name and version are derived from Spring properties.
+ */
 @AutoConfiguration
 @ConditionalOnClass(OpenAPI.class)
 @ConditionalOnProperty(

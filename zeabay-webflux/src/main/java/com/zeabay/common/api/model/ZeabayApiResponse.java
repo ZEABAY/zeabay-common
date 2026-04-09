@@ -4,13 +4,20 @@ import java.time.Instant;
 
 import lombok.Builder;
 
+/**
+ * Unified API response envelope used by all Zeabay REST endpoints.
+ *
+ * @param <T> the type of the response payload
+ */
 @Builder
 public record ZeabayApiResponse<T>(
     boolean success, T data, ErrorResponse error, String traceId, Instant timestamp) {
+  /** Creates a successful response wrapping the given data. */
   public static <T> ZeabayApiResponse<T> ok(T data, String traceId) {
     return new ZeabayApiResponse<>(true, data, null, traceId, Instant.now());
   }
 
+  /** Creates a failed response wrapping the given error. */
   public static <T> ZeabayApiResponse<T> fail(ErrorResponse error, String traceId) {
     return new ZeabayApiResponse<>(false, null, error, traceId, Instant.now());
   }

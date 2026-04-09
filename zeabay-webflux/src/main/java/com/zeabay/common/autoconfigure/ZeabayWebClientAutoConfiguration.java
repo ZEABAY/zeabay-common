@@ -9,6 +9,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/**
+ * Autoconfigures a shared {@link WebClient} bean with trace ID propagation.
+ *
+ * <p>If a {@code zeabayTraceIdWebClientFilter} filter is available, it is wired into the WebClient
+ * builder automatically.
+ */
 @AutoConfiguration
 @ConditionalOnClass(WebClient.class)
 @AutoConfigureAfter(

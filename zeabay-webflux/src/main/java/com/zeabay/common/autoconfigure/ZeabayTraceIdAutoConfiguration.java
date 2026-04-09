@@ -30,6 +30,18 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
 import reactor.util.context.Context;
 
+/**
+ * Autoconfigures distributed trace ID propagation for WebFlux applications.
+ *
+ * <p>Responsibilities:
+ *
+ * <ul>
+ *   <li>Extracts or generates a trace ID from incoming HTTP requests (W3C traceparent / X-Trace-Id)
+ *   <li>Stores the trace ID in the Reactor context and response headers
+ *   <li>Bridges Reactor context to SLF4J MDC via a Reactor hook
+ *   <li>Propagates the trace ID to outgoing WebClient requests
+ * </ul>
+ */
 @AutoConfiguration
 public class ZeabayTraceIdAutoConfiguration {
 
@@ -71,6 +83,10 @@ public class ZeabayTraceIdAutoConfiguration {
     return v;
   }
 
+  /**
+   * WebFilter that extracts or generates a trace ID and writes it to the Reactor context and
+   * response header.
+   */
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
   @ConditionalOnWebApplication(type = REACTIVE)
@@ -86,6 +102,7 @@ public class ZeabayTraceIdAutoConfiguration {
     };
   }
 
+  /** Registers the request metadata filter that populates IP, method, and path in the context. */
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE + 1)
   @ConditionalOnWebApplication(type = REACTIVE)
@@ -93,6 +110,7 @@ public class ZeabayTraceIdAutoConfiguration {
     return new ZeabayRequestContextWebFilter();
   }
 
+  /** Installs a Reactor hook that copies context keys (trace ID, IP, etc.) into SLF4J MDC. */
   @Bean(destroyMethod = "close")
   public HookReleaser reactorMdcTraceIdHook() {
     Hooks.onEachOperator(HOOK_KEY, Operators.lift((_, sub) -> new MdcLifter<>(sub)));
@@ -105,6 +123,7 @@ public class ZeabayTraceIdAutoConfiguration {
     void close();
   }
 
+  /** Propagates the trace ID from Reactor context to outgoing WebClient requests. */
   @Bean
   @ConditionalOnClass(ExchangeFilterFunction.class)
   @ConditionalOnMissingBean(name = "zeabayTraceIdWebClientFilter")

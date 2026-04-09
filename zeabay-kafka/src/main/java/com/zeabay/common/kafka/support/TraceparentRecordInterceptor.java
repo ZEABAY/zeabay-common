@@ -21,6 +21,10 @@ public class TraceparentRecordInterceptor<K, V> implements RecordInterceptor<K, 
   private static final Pattern TRACEPARENT =
       Pattern.compile("^[\\da-fA-F]{2}-([\\da-fA-F]{32})-[\\da-fA-F]{16}-[\\da-fA-F]{2}$");
 
+  /**
+   * Extracts the trace ID from the {@code traceparent} Kafka header and puts it into MDC before the
+   * record is processed.
+   */
   @Override
   public ConsumerRecord<K, V> intercept(ConsumerRecord<K, V> record, Consumer<K, V> consumer) {
     String traceId = extractTraceId(record);
@@ -30,6 +34,7 @@ public class TraceparentRecordInterceptor<K, V> implements RecordInterceptor<K, 
     return record;
   }
 
+  /** Cleans up the MDC trace ID after the record has been processed. */
   @Override
   public void afterRecord(ConsumerRecord<K, V> record, Consumer<K, V> consumer) {
     MDC.remove(ZeabayConstants.TRACE_ID_CTX_KEY);

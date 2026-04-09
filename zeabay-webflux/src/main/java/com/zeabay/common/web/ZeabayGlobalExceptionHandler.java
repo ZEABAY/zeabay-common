@@ -20,11 +20,18 @@ import com.zeabay.common.api.model.ZeabayApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
+/**
+ * Centralized exception handler for all WebFlux controllers.
+ *
+ * <p>Converts exceptions into standardized {@link ZeabayApiResponse} error envelopes with
+ * appropriate HTTP status codes and i18n message keys.
+ */
 @Slf4j
 @Order(-2)
 @RestControllerAdvice
 public class ZeabayGlobalExceptionHandler {
 
+  /** Handles Bean Validation failures from {@code @Valid} request bodies. */
   @ExceptionHandler(WebExchangeBindException.class)
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleValidation(
       WebExchangeBindException ex, ServerWebExchange exchange) {
@@ -35,6 +42,7 @@ public class ZeabayGlobalExceptionHandler {
         exchange, HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR, "error.validation", errors);
   }
 
+  /** Handles domain/business rule violations thrown as {@link BusinessException}. */
   @ExceptionHandler(BusinessException.class)
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleBusiness(
       BusinessException ex, ServerWebExchange exchange) {
@@ -43,6 +51,7 @@ public class ZeabayGlobalExceptionHandler {
     return ZeabayResponses.error(exchange, status, ex.getErrorCode(), messageKey);
   }
 
+  /** Handles Spring's built-in {@link ResponseStatusException} (e.g., 404 from routing). */
   @ExceptionHandler(ResponseStatusException.class)
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleResponseStatus(
       ResponseStatusException ex, ServerWebExchange exchange) {
@@ -54,6 +63,7 @@ public class ZeabayGlobalExceptionHandler {
     return ZeabayResponses.error(exchange, status, status.name(), messageKey);
   }
 
+  /** Catch-all handler for any unhandled exception. Returns a generic 500 error. */
   @ExceptionHandler(Exception.class)
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleAny(
       Exception ex, ServerWebExchange exchange) {

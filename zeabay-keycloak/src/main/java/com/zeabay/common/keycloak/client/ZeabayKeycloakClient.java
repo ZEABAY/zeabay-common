@@ -26,6 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+/**
+ * Reactive client for Keycloak user management and token operations.
+ *
+ * <p>Wraps the blocking Keycloak Admin SDK calls with {@code Schedulers.boundedElastic()} and uses
+ * {@link WebClient} for the OpenID Connect token endpoint.
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class ZeabayKeycloakClient {
@@ -34,6 +40,13 @@ public class ZeabayKeycloakClient {
   private final Keycloak keycloakAdminClient;
   private final WebClient webClient;
 
+  /**
+   * Registers a new user in Keycloak and returns the assigned Keycloak user ID.
+   *
+   * @param request registration details (username, email, password)
+   * @return a {@link Mono} emitting the Keycloak user UUID
+   * @throws BusinessException if the email is already registered (409 Conflict)
+   */
   public Mono<String> registerUser(KeycloakRegistrationRequest request) {
     return Mono.fromCallable(
             () -> {
@@ -61,6 +74,12 @@ public class ZeabayKeycloakClient {
         .subscribeOn(Schedulers.boundedElastic());
   }
 
+  /**
+   * Authenticates a user via the Keycloak token endpoint using the password grant.
+   *
+   * @param request login credentials
+   * @return a {@link Mono} emitting the access/refresh token pair
+   */
   public Mono<ZeabayTokenResponse> loginUser(KeycloakTokenRequest request) {
     MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
     formData.add("client_id", properties.resource());
@@ -78,6 +97,12 @@ public class ZeabayKeycloakClient {
                     e.getMessage()));
   }
 
+  /**
+   * Exchanges a refresh token for a new access/refresh token pair.
+   *
+   * @param refreshToken the current refresh token
+   * @return a {@link Mono} emitting the new token pair
+   */
   public Mono<ZeabayTokenResponse> refreshToken(String refreshToken) {
     MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
     formData.add("client_id", properties.resource());
@@ -89,6 +114,13 @@ public class ZeabayKeycloakClient {
         .doOnError(e -> log.error("Error during token refresh: {}", e.getMessage()));
   }
 
+  /**
+   * Updates the email verification status of a Keycloak user.
+   *
+   * @param keycloakId Keycloak user UUID
+   * @param verified {@code true} to mark the email as verified
+   * @return a {@link Mono} that completes when the update is done
+   */
   public Mono<Void> setEmailVerified(String keycloakId, boolean verified) {
     return Mono.fromCallable(
             () -> {
@@ -103,6 +135,12 @@ public class ZeabayKeycloakClient {
         .subscribeOn(Schedulers.boundedElastic());
   }
 
+  /**
+   * Terminates all active sessions for a Keycloak user.
+   *
+   * @param keycloakId Keycloak user UUID
+   * @return a {@link Mono} that completes when the logout is done
+   */
   public Mono<Void> logout(String keycloakId) {
     return Mono.fromCallable(
             () -> {
@@ -113,6 +151,13 @@ public class ZeabayKeycloakClient {
         .subscribeOn(Schedulers.boundedElastic());
   }
 
+  /**
+   * Resets the password of a Keycloak user.
+   *
+   * @param keycloakId Keycloak user UUID
+   * @param newPassword the new password (not temporary)
+   * @return a {@link Mono} that completes when the password is reset
+   */
   public Mono<Void> resetPassword(String keycloakId, String newPassword) {
     return Mono.fromCallable(
             () -> {
@@ -160,6 +205,12 @@ public class ZeabayKeycloakClient {
         .subscribeOn(Schedulers.boundedElastic());
   }
 
+  /**
+   * Deletes a Keycloak user. Typically used as a compensating action during saga rollbacks.
+   *
+   * @param keycloakId Keycloak user UUID
+   * @return a {@link Mono} that completes when the user is deleted
+   */
   public Mono<Void> deleteUser(String keycloakId) {
     return Mono.fromCallable(
             () -> {

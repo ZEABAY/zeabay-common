@@ -12,11 +12,20 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import com.zeabay.common.redis.ZeabayRedisProperties;
 
+/**
+ * Autoconfigures a reactive Redis template with String serialization.
+ *
+ * <p>Activates when {@link ReactiveRedisTemplate} is on the classpath. Connection details are
+ * provided by Spring Boot's standard {@code spring.data.redis.*} properties.
+ */
 @AutoConfiguration
 @ConditionalOnClass(ReactiveRedisTemplate.class)
 @EnableConfigurationProperties(ZeabayRedisProperties.class)
 public class ZeabayRedisAutoConfiguration {
 
+  /**
+   * Creates a {@link ReactiveRedisTemplate} using String serialization for both keys and values.
+   */
   @Bean
   @ConditionalOnMissingBean(ReactiveRedisTemplate.class)
   public ReactiveRedisTemplate<String, String> zeabayReactiveRedisTemplate(

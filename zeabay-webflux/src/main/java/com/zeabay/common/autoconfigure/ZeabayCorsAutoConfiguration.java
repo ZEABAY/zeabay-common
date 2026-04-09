@@ -14,6 +14,12 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import com.zeabay.common.constant.ZeabayConstants;
 
+/**
+ * Fallback CORS configuration for reactive WebFlux applications without Spring Security.
+ *
+ * <p>When {@code SecurityWebFilterChain} is on the classpath, CORS is managed by {@code
+ * ZeabaySecurityAutoConfiguration} instead, and this configuration is skipped.
+ */
 @AutoConfiguration
 @ConditionalOnWebApplication(type = REACTIVE)
 @ConditionalOnMissingClass("org.springframework.security.web.server.SecurityWebFilterChain")

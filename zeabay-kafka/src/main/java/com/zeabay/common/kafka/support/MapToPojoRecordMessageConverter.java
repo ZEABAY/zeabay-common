@@ -23,6 +23,10 @@ public class MapToPojoRecordMessageConverter extends MessagingMessageConverter {
 
   private final ObjectMapper objectMapper;
 
+  /**
+   * Converts the raw Kafka record value ({@link Map} or JSON {@link String}) into the target POJO
+   * type declared in the {@code @KafkaListener} method signature.
+   */
   @Override
   protected Object extractAndConvertValue(ConsumerRecord<?, ?> record, Type type) {
     Object value = record.value();

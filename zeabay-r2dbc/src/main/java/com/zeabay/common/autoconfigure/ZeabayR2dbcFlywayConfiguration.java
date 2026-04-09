@@ -55,6 +55,9 @@ public class ZeabayR2dbcFlywayConfiguration {
     return new ZeabayR2dbcFlywayMigrationRunner(env, contributors);
   }
 
+  /**
+   * Bean that runs Flyway migrations at application startup using the consolidated locations list.
+   */
   @Slf4j
   static class ZeabayR2dbcFlywayMigrationRunner implements InitializingBean {
 

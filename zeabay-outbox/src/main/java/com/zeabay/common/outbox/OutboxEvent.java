@@ -60,9 +60,13 @@ public class OutboxEvent {
   @Column("published_at")
   private Instant publishedAt;
 
+  /** Lifecycle status of an outbox event. */
   public enum Status {
+    /** Waiting to be published to Kafka by {@link OutboxPublisher}. */
     PENDING,
+    /** Successfully delivered to Kafka. */
     PUBLISHED,
+    /** Exceeded maximum retry attempts; requires manual intervention. */
     FAILED
   }
 }

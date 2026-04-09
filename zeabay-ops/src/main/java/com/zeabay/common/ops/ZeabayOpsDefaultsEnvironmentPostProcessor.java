@@ -11,16 +11,15 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.Profiles;
 
 /**
- * Spring Boot ortam ayarlarını, uygulama başlamadan önce varsayılan değerlerle doldurur.
+ * Injects platform-wide default properties before the application context starts.
  *
- * <p>Actuator (health, metrics, prometheus) ayarlarını otomatik yapar; servislerin
- * application.yml'de tekrar yazmasına gerek kalmaz. İstenirse application.yml ile override
- * edilebilir.
+ * <p>Configures Actuator endpoints (health, metrics, Prometheus) so each service does not need to
+ * repeat these settings in {@code application.yml}. Individual services can still override any
+ * value.
  *
- * <p>Prod'da sadece health expose edilir (güvenlik). Prometheus/metrics için servis
- * application-prod.yml'de {@code management.endpoints.web.exposure.include} ile açabilir. Tek port
- * kullanılır; actuator main port'ta kalır. Prod'da Gateway sadece /api/** route eder, /actuator/**
- * cluster içinden (Prometheus, K8s probes) erişilir.
+ * <p>In production, only the health endpoint is exposed by default for security. Other environments
+ * expose health, info, metrics, and Prometheus. Forward headers strategy is always set to {@code
+ * native} since services run behind a gateway.
  */
 public final class ZeabayOpsDefaultsEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {
@@ -28,7 +27,7 @@ public final class ZeabayOpsDefaultsEnvironmentPostProcessor
   private static final String PROPERTY_SOURCE_NAME = "zeabayOpsDefaults";
   private static final String FIXED_PROPERTY_SOURCE_NAME = "zeabayOpsFixed";
 
-  /** Sadece property tanımlı değilse varsayılan değeri ekler; mevcut değere dokunmaz. */
+  /** Adds the default value only when the property is not already defined. */
   private static void putIfMissing(
       ConfigurableEnvironment env, Map<String, Object> target, String key, String value) {
     if (env.getProperty(key) == null) {
@@ -41,19 +40,19 @@ public final class ZeabayOpsDefaultsEnvironmentPostProcessor
       ConfigurableEnvironment environment, SpringApplication application) {
     Map<String, Object> defaults = new LinkedHashMap<>();
 
-    // Kubernetes liveness/readiness probe'ları için health endpoint
+    // Kubernetes liveness/readiness probes: health endpoint
     putIfMissing(environment, defaults, "management.endpoint.health.probes.enabled", "true");
     putIfMissing(environment, defaults, "management.endpoint.health.show-details", "never");
 
-    // Liveness/readiness state endpoint'leri (K8s ile uyumlu)
+    // Liveness/readiness state endpoints (K8s compatible)
     putIfMissing(environment, defaults, "management.endpoint.livenessstate.enabled", "true");
     putIfMissing(environment, defaults, "management.endpoint.readinessstate.enabled", "true");
 
-    // Build info ve Prometheus endpoint'leri etkin
+    // Build info and Prometheus endpoints enabled
     putIfMissing(environment, defaults, "management.info.build.enabled", "true");
     putIfMissing(environment, defaults, "management.endpoint.prometheus.enabled", "true");
 
-    // Prod: sadece health (güvenlik). Diğer ortamlarda: health, info, metrics, prometheus
+    // Prod: health only (security). Other environments: health, info, metrics, prometheus
     boolean isProd = environment.acceptsProfiles(Profiles.of("prod"));
     if (isProd) {
       putIfMissing(environment, defaults, "management.endpoints.web.exposure.include", "health");
@@ -65,16 +64,16 @@ public final class ZeabayOpsDefaultsEnvironmentPostProcessor
           "health,info,metrics,prometheus");
     }
 
-    // Sabit kararlar: değiştirilemez (addFirst = en yüksek öncelik)
+    // Fixed decisions: cannot be overridden (addFirst = highest priority)
     Map<String, Object> fixed = new LinkedHashMap<>();
-    fixed.put("server.forward-headers-strategy", "native"); // Her zaman gateway arkasında
+    fixed.put("server.forward-headers-strategy", "native"); // Always behind gateway
     if (environment.getPropertySources().get(FIXED_PROPERTY_SOURCE_NAME) == null) {
       environment
           .getPropertySources()
           .addFirst(new MapPropertySource(FIXED_PROPERTY_SOURCE_NAME, fixed));
     }
 
-    // Varsayılanları en düşük öncelikle ekle (application.yml override edebilir)
+    // Add defaults with lowest priority (application.yml can override)
     if (!defaults.isEmpty() && environment.getPropertySources().get(PROPERTY_SOURCE_NAME) == null) {
       environment
           .getPropertySources()
@@ -82,7 +81,7 @@ public final class ZeabayOpsDefaultsEnvironmentPostProcessor
     }
   }
 
-  /** Erken çalışması için yüksek öncelik. */
+  /** High priority so defaults are injected early in the startup lifecycle. */
   @Override
   public int getOrder() {
     return Ordered.HIGHEST_PRECEDENCE + 50;

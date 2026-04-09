@@ -15,15 +15,23 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.zeabay.common.security.OtpGenerator;
 import com.zeabay.common.tsid.TsidGenerator;
 
+/**
+ * Root auto-configuration for shared platform utilities.
+ *
+ * <p>Registers beans for TSID generation, OTP generation, and a centralized {@link ObjectMapper}
+ * with the platform's standard JSON contract.
+ */
 @AutoConfiguration
 public class ZeabayCoreAutoConfiguration {
 
+  /** Creates a {@link TsidGenerator} with a hostname-derived node ID when available. */
   @Bean
   @ConditionalOnMissingBean
   public TsidGenerator tsidGenerator() {
     return new TsidGenerator();
   }
 
+  /** Creates an OTP generator backed by {@link java.security.SecureRandom}. */
   @Bean
   @ConditionalOnMissingBean
   public OtpGenerator otpGenerator() {

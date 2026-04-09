@@ -7,11 +7,20 @@ import lombok.Getter;
 public class BusinessException extends RuntimeException {
   private final ErrorCode errorCode;
 
+  /**
+   * @param errorCode the standardized error code
+   * @param message a human-readable detail message
+   */
   public BusinessException(ErrorCode errorCode, String message) {
     super(message);
     this.errorCode = errorCode;
   }
 
+  /**
+   * Creates an exception using the error code's default message.
+   *
+   * @param errorCode the standardized error code
+   */
   public BusinessException(ErrorCode errorCode) {
     super(errorCode.getDefaultMessage());
     this.errorCode = errorCode;

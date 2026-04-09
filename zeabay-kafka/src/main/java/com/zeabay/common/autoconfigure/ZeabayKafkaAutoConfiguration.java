@@ -69,6 +69,7 @@ public class ZeabayKafkaAutoConfiguration {
     return admin;
   }
 
+  /** Creates a Kafka producer factory with idempotent delivery and configurable retry settings. */
   @Bean
   @ConditionalOnMissingBean
   public ProducerFactory<String, Object> zeabayKafkaProducerFactory(ZeabayKafkaProperties props) {
@@ -85,6 +86,7 @@ public class ZeabayKafkaAutoConfiguration {
     return new DefaultKafkaProducerFactory<>(config);
   }
 
+  /** Creates an observation-enabled Kafka template for publishing messages. */
   @Bean
   @ConditionalOnMissingBean
   public KafkaTemplate<String, Object> zeabayKafkaTemplate(
@@ -94,6 +96,7 @@ public class ZeabayKafkaAutoConfiguration {
     return template;
   }
 
+  /** Creates a Kafka consumer factory with manual commit and configurable polling settings. */
   @Bean
   @ConditionalOnMissingBean
   public ConsumerFactory<String, Object> zeabayKafkaConsumerFactory(ZeabayKafkaProperties props) {
@@ -135,6 +138,10 @@ public class ZeabayKafkaAutoConfiguration {
     return new DefaultErrorHandler(new FixedBackOff(1000L, dlqProps.getMaxAttempts() - 1));
   }
 
+  /**
+   * Creates the listener container factory with POJO message conversion, traceparent propagation,
+   * observability, and dead-letter error handling.
+   */
   @Bean
   @ConditionalOnMissingBean
   public ConcurrentKafkaListenerContainerFactory<String, Object>

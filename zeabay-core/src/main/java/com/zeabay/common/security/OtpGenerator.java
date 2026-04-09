@@ -14,6 +14,11 @@ public class OtpGenerator {
     this.random = new SecureRandom();
   }
 
+  /**
+   * Generates a random 6-digit OTP string (100000–999999).
+   *
+   * @return a 6-digit numeric string
+   */
   public String generate() {
     return String.valueOf(MIN + random.nextInt(RANGE));
   }

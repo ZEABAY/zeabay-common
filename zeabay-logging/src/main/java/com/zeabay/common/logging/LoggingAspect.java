@@ -17,6 +17,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
+/**
+ * AOP aspect that provides structured entry/exit logging for methods annotated with {@link
+ * Loggable}.
+ *
+ * <p>Supports synchronous return types, {@link Mono}, and {@link Flux}. Log lines include trace ID,
+ * client IP, authenticated user, HTTP method, and request path from the Reactor context or MDC.
+ */
 @Slf4j
 @Aspect
 @Order(Ordered.LOWEST_PRECEDENCE - 1)

@@ -14,6 +14,14 @@ public final class TsidNodeIdResolver {
 
   private TsidNodeIdResolver() {}
 
+  /**
+   * Resolves a node ID from the hostname environment variable.
+   *
+   * <p>Tries {@code HOSTNAME} first (Linux/K8s), then {@code COMPUTERNAME} (Windows). Extracts a
+   * trailing ordinal if present, otherwise hashes the entire hostname.
+   *
+   * @return node ID between 0 and 1023, or {@code null} if no hostname is available
+   */
   public static Integer resolve() {
     String hostname = System.getenv("HOSTNAME");
     if (hostname == null || hostname.isBlank()) {
