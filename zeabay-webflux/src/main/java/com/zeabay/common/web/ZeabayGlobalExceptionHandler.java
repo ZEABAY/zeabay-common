@@ -46,6 +46,11 @@ public class ZeabayGlobalExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public Mono<ResponseEntity<ZeabayApiResponse<Void>>> handleBusiness(
       BusinessException ex, ServerWebExchange exchange) {
+    log.warn(
+        "Business error: code={}, message={}, path={}",
+        ex.getErrorCode(),
+        ex.getMessage(),
+        exchange.getRequest().getURI());
     HttpStatus status = HttpStatus.valueOf(ex.getErrorCode().getHttpStatus());
     String messageKey = "error." + ex.getErrorCode().name().toLowerCase();
     return ZeabayResponses.error(exchange, status, ex.getErrorCode(), messageKey);

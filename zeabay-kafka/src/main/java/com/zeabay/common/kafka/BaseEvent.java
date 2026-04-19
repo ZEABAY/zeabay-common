@@ -3,7 +3,7 @@ package com.zeabay.common.kafka;
 import java.time.Instant;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /**
  * The standard envelope for all Zeabay Kafka domain events.
@@ -15,9 +15,17 @@ import lombok.RequiredArgsConstructor;
  *   <li>Supports Consumer Idempotency via TSID-based {@code eventId}.
  *   <li>Enforces chronological ordering/filtering via {@code occurredAt}.
  * </ul>
+ *
+ * <p>Uses {@link SuperBuilder} so child event classes inherit builder fields automatically. Child
+ * classes should annotate themselves with {@code @SuperBuilder} and {@code @Jacksonized} — this
+ * eliminates having to redeclare parent fields (eventId, traceId, occurredAt) in constructors.
+ *
+ * <p>JSON property naming and snake_case fallback are handled globally by the centralized {@link
+ * com.fasterxml.jackson.databind.ObjectMapper} in {@code ZeabayCoreAutoConfiguration} — per-field
+ * {@code @JsonProperty}/{@code @JsonAlias} annotations are not needed.
  */
 @Getter
-@RequiredArgsConstructor
+@SuperBuilder
 public abstract class BaseEvent {
 
   private final String eventId;

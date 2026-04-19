@@ -134,9 +134,10 @@ public class OutboxPublisher {
             e -> {
               e.setStatus(OutboxEvent.Status.PUBLISHED);
               e.setPublishedAt(Instant.now());
-              log.debug(
-                  "Outbox published: eventType={}, aggregateId={}",
+              log.info(
+                  "Outbox published: eventType={}, topic={}, aggregateId={}",
                   e.getEventType(),
+                  e.getTopic(),
                   e.getAggregateId());
               return repository.save(e);
             })

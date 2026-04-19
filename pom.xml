@@ -65,6 +65,7 @@
         <module>zeabay-inbox</module>
         <module>zeabay-keycloak</module>
         <module>zeabay-redis</module>
+        <module>zeabay-s3</module>
     </modules>
 
     <dependencyManagement>

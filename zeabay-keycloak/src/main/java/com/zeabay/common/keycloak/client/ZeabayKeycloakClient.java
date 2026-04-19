@@ -68,7 +68,8 @@ public class ZeabayKeycloakClient {
                   throw new BusinessException(
                       ErrorCode.USER_ALREADY_EXISTS, "Email is already registered");
                 }
-                throw new RuntimeException("Identity Provider Error: " + error);
+                throw new BusinessException(
+                    ErrorCode.IDENTITY_PROVIDER_ERROR, "Keycloak user creation failed: " + error);
               }
             })
         .subscribeOn(Schedulers.boundedElastic());
@@ -238,7 +239,12 @@ public class ZeabayKeycloakClient {
             clientResponse ->
                 clientResponse
                     .bodyToMono(String.class)
-                    .flatMap(error -> Mono.error(new RuntimeException("Auth Failed: " + error))))
+                    .flatMap(
+                        error ->
+                            Mono.error(
+                                new BusinessException(
+                                    ErrorCode.INVALID_CREDENTIALS,
+                                    "Keycloak authentication failed: " + error))))
         .bodyToMono(ZeabayTokenResponse.class);
   }
 

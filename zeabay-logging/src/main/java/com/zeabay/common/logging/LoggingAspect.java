@@ -30,19 +30,27 @@ import reactor.util.context.ContextView;
 public class LoggingAspect {
 
   private static final String HIDDEN_VALUE = "[HIDDEN]";
+  private static final int MAX_ARGS_LENGTH = 500;
 
   @Around("@annotation(loggable) || @within(loggable)")
   public Object logAround(ProceedingJoinPoint joinPoint, Loggable loggable) throws Throwable {
     MethodSignature signature = (MethodSignature) joinPoint.getSignature();
     if (loggable == null) {
-      loggable = signature.getMethod().getDeclaringClass().getAnnotation(Loggable.class);
+      loggable = joinPoint.getTarget().getClass().getAnnotation(Loggable.class);
     }
 
     String methodId = signature.getDeclaringType().getSimpleName() + "." + signature.getName();
     boolean logArgs = loggable != null && loggable.logArgs();
     boolean logRes = loggable != null && loggable.logResult();
-    String args =
-        (logArgs && log.isDebugEnabled()) ? Arrays.toString(joinPoint.getArgs()) : HIDDEN_VALUE;
+    String args = logArgs ? safeArgsToString(joinPoint.getArgs()) : HIDDEN_VALUE;
+
+    Class<?> returnType = signature.getReturnType();
+    boolean reactiveReturn =
+        Mono.class.isAssignableFrom(returnType) || Flux.class.isAssignableFrom(returnType);
+
+    if (!reactiveReturn) {
+      logEntry(null, methodId, args);
+    }
 
     Object result;
     long assemblyTime = System.currentTimeMillis();
@@ -50,7 +58,9 @@ public class LoggingAspect {
     try {
       result = joinPoint.proceed();
     } catch (Throwable ex) {
-      logEntry(null, methodId, args);
+      if (reactiveReturn) {
+        logEntry(null, methodId, args);
+      }
       log.error(
           "{} <== [{}] failed after {}ms. Reason: {}",
           getLogPrefix(null),
@@ -62,7 +72,9 @@ public class LoggingAspect {
 
     return switch (result) {
       case null -> {
-        logEntry(null, methodId, args);
+        if (reactiveReturn) {
+          logEntry(null, methodId, args);
+        }
         logSyncExit(methodId, null, assemblyTime, logRes);
         yield null;
       }
@@ -83,30 +95,36 @@ public class LoggingAspect {
               });
 
       default -> {
-        logEntry(null, methodId, args);
+        if (reactiveReturn) {
+          logEntry(null, methodId, args);
+        }
         logSyncExit(methodId, result, assemblyTime, logRes);
         yield result;
       }
     };
   }
 
-  private void logEntry(ContextView ctx, String methodId, String args) {
-    if (log.isDebugEnabled()) {
-      log.debug("{} ==> [{}] called with args: {}", getLogPrefix(ctx), methodId, args);
+  private static String safeArgsToString(Object[] args) {
+    try {
+      String raw = Arrays.toString(args);
+      return raw.length() > MAX_ARGS_LENGTH ? raw.substring(0, MAX_ARGS_LENGTH) + "...]" : raw;
+    } catch (Exception e) {
+      return "[args-error: " + e.getClass().getSimpleName() + "]";
     }
   }
 
+  private void logEntry(ContextView ctx, String methodId, String args) {
+    log.info("{} ==> [{}] called | args: {}", getLogPrefix(ctx), methodId, args);
+  }
+
   private void logSyncExit(String mId, Object res, long start, boolean logRes) {
-    if (log.isDebugEnabled()) {
-      long duration = System.currentTimeMillis() - start;
-      String resStr =
-          (logRes && res != null) ? String.valueOf(res) : (res == null ? "void" : HIDDEN_VALUE);
-      log.debug(
-          "{} <== [{}] returned in {}ms with result: {}",
-          getLogPrefix(null),
-          mId,
-          duration,
-          resStr);
+    long duration = System.currentTimeMillis() - start;
+    if (logRes) {
+      String resStr = res != null ? String.valueOf(res) : "void";
+      log.info(
+          "{} <== [{}] completed in {}ms | result: {}", getLogPrefix(null), mId, duration, resStr);
+    } else {
+      log.info("{} <== [{}] completed in {}ms", getLogPrefix(null), mId, duration);
     }
   }
 
@@ -121,7 +139,10 @@ public class LoggingAspect {
   }
 
   private String val(ContextView ctx, String key, String def) {
-    if (ctx != null) return ctx.getOrDefault(key, def);
+    if (ctx != null) {
+      String ctxVal = ctx.getOrDefault(key, null);
+      if (ctxVal != null) return ctxVal;
+    }
     String mdc = MDC.get(key);
     return mdc != null ? mdc : def;
   }
@@ -130,14 +151,16 @@ public class LoggingAspect {
       Mono<T> mono, String mId, long start, boolean logRes, ContextView ctx) {
     return mono.doOnSuccess(
             v -> {
-              if (log.isDebugEnabled()) {
-                String res = logRes ? String.valueOf(v) : HIDDEN_VALUE;
-                log.debug(
-                    "{} <== [{}] completed in {}ms with result: {}",
+              long duration = System.currentTimeMillis() - start;
+              if (logRes) {
+                log.info(
+                    "{} <== [{}] completed in {}ms | result: {}",
                     getLogPrefix(ctx),
                     mId,
-                    (System.currentTimeMillis() - start),
-                    res);
+                    duration,
+                    v);
+              } else {
+                log.info("{} <== [{}] completed in {}ms", getLogPrefix(ctx), mId, duration);
               }
             })
         .doOnError(
@@ -161,17 +184,14 @@ public class LoggingAspect {
       Flux<T> flux, String mId, long start, boolean logRes, ContextView ctx) {
     return flux.doOnComplete(
             () -> {
-              if (log.isDebugEnabled())
-                log.debug(
-                    "{} <== [{}] completed stream in {}ms",
-                    getLogPrefix(ctx),
-                    mId,
-                    (System.currentTimeMillis() - start));
+              long duration = System.currentTimeMillis() - start;
+              log.info("{} <== [{}] stream completed in {}ms", getLogPrefix(ctx), mId, duration);
             })
         .doOnNext(
             v -> {
-              if (logRes && log.isDebugEnabled())
-                log.debug("{}     [{}] emitted: {}", getLogPrefix(ctx), mId, v);
+              if (logRes) {
+                log.info("{}     [{}] emitted: {}", getLogPrefix(ctx), mId, v);
+              }
             })
         .doOnError(
             ex ->

@@ -1,13 +1,11 @@
 package com.zeabay.common.autoconfigure;
 
-import com.zeabay.common.r2dbc.BaseEntity;
-import com.zeabay.common.tsid.TsidGenerator;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +13,11 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.ReactiveAuditorAware;
 import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 import org.springframework.data.r2dbc.mapping.event.BeforeConvertCallback;
+
+import com.zeabay.common.r2dbc.BaseEntity;
+import com.zeabay.common.tsid.TsidGenerator;
+
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 /**

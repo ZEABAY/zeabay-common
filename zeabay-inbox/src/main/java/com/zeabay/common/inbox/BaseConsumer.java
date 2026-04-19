@@ -58,27 +58,34 @@ public abstract class BaseConsumer<T extends BaseEvent> {
 
     return inboxEventRepository
         .save(record)
-        .flatMap(
-            _ ->
-                doProcess(event)
-                    .doOnSuccess(_ -> log.debug("Processed event: id={}", event.getEventId()))
-                    .onErrorResume(
-                        e -> {
-                          log.error(
-                              "Processing failed: id={}, error={}",
-                              event.getEventId(),
-                              e.getMessage());
-                          return Mono.error(e);
-                        }))
         .onErrorResume(
             DataIntegrityViolationException.class,
             _ -> {
-              log.debug(
-                  "Duplicate event skipped: id={}, producedFrom={}",
+              log.info(
+                  "Duplicate event skipped: id={}, type={}, producedFrom={}",
                   event.getEventId(),
+                  event.getEventType(),
                   producedFrom);
               return Mono.empty();
-            });
+            })
+        .flatMap(
+            _ ->
+                doProcess(event)
+                    .doOnSuccess(
+                        _ ->
+                            log.info(
+                                "Event processed successfully: id={}, type={}",
+                                event.getEventId(),
+                                event.getEventType()))
+                    .onErrorResume(
+                        e -> {
+                          log.error(
+                              "Event processing failed: id={}, type={}, error={}",
+                              event.getEventId(),
+                              event.getEventType(),
+                              e.getMessage());
+                          return Mono.error(e);
+                        }));
   }
 
   /**

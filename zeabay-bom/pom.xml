@@ -21,6 +21,7 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <tsid.version>5.2.6</tsid.version>
         <springdoc.version>3.0.1</springdoc.version>
+        <awssdk.version>2.31.15</awssdk.version>
     </properties>
 
     <dependencyManagement>
@@ -36,6 +37,13 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${awssdk.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -103,6 +111,11 @@
             <dependency>
                 <groupId>com.zeabay</groupId>
                 <artifactId>zeabay-redis</artifactId>
+                <version>${zeabay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zeabay</groupId>
+                <artifactId>zeabay-s3</artifactId>
                 <version>${zeabay.version}</version>
             </dependency>
 
